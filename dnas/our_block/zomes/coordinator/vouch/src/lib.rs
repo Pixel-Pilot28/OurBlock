@@ -159,6 +159,50 @@ pub fn get_vouches_for(agent: AgentPubKey) -> ExternResult<Vec<VouchInfo>> {
     Ok(vouches)
 }
 
+/// Vouch for a neighbor with a physical handshake verification
+/// 
+/// Simplified function that defaults to PhysicalHandshake vouch type.
+/// This is the primary function called when scanning a neighbor's QR code.
+#[hdk_extern]
+pub fn vouch_for_neighbor(target_agent: AgentPubKey) -> ExternResult<VouchOutput> {
+    create_vouch(CreateVouchInput {
+        vouchee: target_agent,
+        vouch_type: VouchType::PhysicalHandshake,
+        note: None,
+    })
+}
+
+/// Get all vouches where the current user is the vouchee
+/// 
+/// Returns all vouch entries that other neighbors have created for the calling agent.
+#[hdk_extern]
+pub fn get_my_vouches(_: ()) -> ExternResult<Vec<VouchInfo>> {
+    let agent = agent_info()?.agent_initial_pubkey;
+    get_vouches_for(agent)
+}
+
+/// Check if an agent is verified (meets the vouching threshold)
+/// 
+/// Returns true if the agent:
+/// - Is a trusted anchor, OR
+/// - Has at least 1 vouch from a trusted anchor, OR
+/// - Has at least 2 vouches from verified members
+#[hdk_extern]
+pub fn is_verified(agent: AgentPubKey) -> ExternResult<bool> {
+    let info = get_membership_status(agent)?;
+    Ok(matches!(
+        info.status,
+        MembershipStatus::Verified | MembershipStatus::TrustedAnchor
+    ))
+}
+
+/// Check if the calling agent is verified
+#[hdk_extern]
+pub fn am_i_verified(_: ()) -> ExternResult<bool> {
+    let agent = agent_info()?.agent_initial_pubkey;
+    is_verified(agent)
+}
+
 /// Get all vouches that an agent has given to others
 fn get_vouches_given_by(agent: AgentPubKey) -> ExternResult<Vec<VouchOutput>> {
     let links = get_links(
