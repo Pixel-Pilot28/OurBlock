@@ -14,6 +14,8 @@ integrity:
       bundled: ../../../target/wasm32-unknown-unknown/release/feed_integrity.wasm
     - name: toolshed_integrity
       bundled: ../../../target/wasm32-unknown-unknown/release/toolshed_integrity.wasm
+    - name: helpinghands_integrity
+      bundled: ../../../target/wasm32-unknown-unknown/release/helpinghands_integrity.wasm
 coordinator:
   zomes:
     - name: profile
@@ -32,3 +34,7 @@ coordinator:
       bundled: ../../../target/wasm32-unknown-unknown/release/toolshed.wasm
       dependencies:
         - name: toolshed_integrity
+    - name: helpinghands
+      bundled: ../../../target/wasm32-unknown-unknown/release/helpinghands.wasm
+      dependencies:
+        - name: helpinghands_integrity

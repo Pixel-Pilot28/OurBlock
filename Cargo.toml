@@ -5,10 +5,12 @@ members = [
     "dnas/our_block/zomes/integrity/vouch",
     "dnas/our_block/zomes/integrity/feed",
     "dnas/our_block/zomes/integrity/toolshed",
+    "dnas/our_block/zomes/integrity/helpinghands_integrity",
     "dnas/our_block/zomes/coordinator/profile",
     "dnas/our_block/zomes/coordinator/vouch",
     "dnas/our_block/zomes/coordinator/feed",
     "dnas/our_block/zomes/coordinator/toolshed",
+    "dnas/our_block/zomes/coordinator/helpinghands",
 ]
 
 [workspace.dependencies]
