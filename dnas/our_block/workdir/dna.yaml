@@ -8,9 +8,15 @@ integrity:
   zomes:
     - name: profile_integrity
       bundled: ../../../target/wasm32-unknown-unknown/release/profile_integrity.wasm
+    - name: vouch_integrity
+      bundled: ../../../target/wasm32-unknown-unknown/release/vouch_integrity.wasm
 coordinator:
   zomes:
     - name: profile
       bundled: ../../../target/wasm32-unknown-unknown/release/profile.wasm
       dependencies:
         - name: profile_integrity
+    - name: vouch
+      bundled: ../../../target/wasm32-unknown-unknown/release/vouch.wasm
+      dependencies:
+        - name: vouch_integrity

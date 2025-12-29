@@ -2,7 +2,9 @@
 resolver = "2"
 members = [
     "dnas/our_block/zomes/integrity/profile",
+    "dnas/our_block/zomes/integrity/vouch",
     "dnas/our_block/zomes/coordinator/profile",
+    "dnas/our_block/zomes/coordinator/vouch",
 ]
 
 [workspace.dependencies]
