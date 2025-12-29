@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = [
+    "dnas/our_block/zomes/integrity/profile",
+    "dnas/our_block/zomes/coordinator/profile",
+]
+
+[workspace.dependencies]
+# Holochain dependencies - using compatible versions
+hdi = "0.5"
+hdk = "0.4"
+serde = "1"
+
+[profile.dev]
+opt-level = "z"
+
+[profile.release]
+opt-level = "z"

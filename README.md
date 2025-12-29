@@ -79,24 +79,39 @@ lair-keystore --version
 
 ---
 
-## 📁 Project Structure (Planned)
+## 📁 Project Structure
 
 ```
 OurBlock/
-├── flake.nix              # Nix flake for dev environment
+├── flake.nix                      # Nix flake for dev environment
+├── Cargo.toml                     # Rust workspace configuration
 ├── dnas/
-│   ├── block_feed/        # Main feed DNA
-│   │   ├── integrity/     # Validation rules (Integrity Zome)
-│   │   └── coordinator/   # Business logic (Coordinator Zome)
-│   ├── vouch/             # Web of Trust / Identity DNA
-│   ├── tool_shed/         # Shared items library DNA
-│   ├── helping_hands/     # Mutual aid DNA
-│   └── circle_chat/       # Messaging DNA
-├── happs/
-│   └── ourblock.happ      # Bundled hApp
-├── ui/                    # Frontend application
-└── tests/                 # Integration tests
+│   └── our_block/
+│       ├── workdir/
+│       │   └── dna.yaml           # DNA manifest
+│       └── zomes/
+│           ├── integrity/
+│           │   └── profile/       # Profile validation rules
+│           └── coordinator/
+│               └── profile/       # Profile business logic
+├── workdir/
+│   └── happ.yaml                  # hApp manifest
+├── ui/                            # React/TypeScript frontend
+│   ├── src/
+│   │   ├── components/            # React components
+│   │   ├── contexts/              # React contexts (Holochain)
+│   │   └── types/                 # TypeScript type definitions
+│   └── package.json
+└── tests/                         # Integration tests (planned)
 ```
+
+### Future Modules (Planned)
+
+- **vouch/** - Web of Trust / Identity DNA
+- **block_feed/** - Main feed DNA  
+- **tool_shed/** - Shared items library DNA
+- **helping_hands/** - Mutual aid DNA
+- **circle_chat/** - Messaging DNA
 
 ---
 

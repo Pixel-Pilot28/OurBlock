@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="20" fill="#4a7c59"/>
+  <g fill="white">
+    <!-- House 1 -->
+    <path d="M20 70 L20 50 L30 40 L40 50 L40 70 Z"/>
+    <rect x="26" y="58" width="8" height="12" fill="#4a7c59"/>
+    
+    <!-- House 2 (center, taller) -->
+    <path d="M42 70 L42 45 L50 35 L58 45 L58 70 Z"/>
+    <rect x="47" y="55" width="6" height="15" fill="#4a7c59"/>
+    
+    <!-- House 3 -->
+    <path d="M60 70 L60 50 L70 40 L80 50 L80 70 Z"/>
+    <rect x="66" y="58" width="8" height="12" fill="#4a7c59"/>
+    
+    <!-- Ground line -->
+    <rect x="15" y="70" width="70" height="4" rx="2"/>
+  </g>
+</svg>
