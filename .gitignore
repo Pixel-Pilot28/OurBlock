@@ -1,0 +1,124 @@
+# =============================================================================
+# OurBlock .gitignore
+# Covers: Rust, Holochain, Node.js, Nix, and common IDE files
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Rust / Cargo
+# -----------------------------------------------------------------------------
+/target/
+**/target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# -----------------------------------------------------------------------------
+# Holochain Specific
+# -----------------------------------------------------------------------------
+# Compiled DNA bundles
+*.dna
+*.happ
+!*.dna.yaml
+!*.happ.yaml
+
+# Holochain sandbox/conductor data
+.hc
+.hc_live*
+.holochain/
+conductor-config.yaml
+
+# Lair keystore data
+.lair/
+lair-keystore/
+
+# Holochain test artifacts
+/tests/node_modules/
+/tests/.hc/
+
+# -----------------------------------------------------------------------------
+# Node.js / NPM / PNPM
+# -----------------------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment files (may contain secrets)
+.env
+.env.local
+.env.*.local
+
+# -----------------------------------------------------------------------------
+# Nix
+# -----------------------------------------------------------------------------
+result
+result-*
+.direnv/
+.nix-profile
+
+# -----------------------------------------------------------------------------
+# IDE and Editors
+# -----------------------------------------------------------------------------
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# JetBrains IDEs
+.idea/
+*.iml
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.#*
+
+# -----------------------------------------------------------------------------
+# OS Generated
+# -----------------------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# -----------------------------------------------------------------------------
+# Logs and Databases
+# -----------------------------------------------------------------------------
+*.log
+*.sqlite
+*.sqlite3
+*.db
+
+# -----------------------------------------------------------------------------
+# Misc
+# -----------------------------------------------------------------------------
+*.bak
+*.tmp
+*.temp
+.cache/
+coverage/
