@@ -16,6 +16,8 @@ integrity:
       bundled: ../../../target/wasm32-unknown-unknown/release/toolshed_integrity.wasm
     - name: helpinghands_integrity
       bundled: ../../../target/wasm32-unknown-unknown/release/helpinghands_integrity.wasm
+    - name: chat_integrity
+      bundled: ../../../target/wasm32-unknown-unknown/release/chat_integrity.wasm
 coordinator:
   zomes:
     - name: profile
@@ -38,3 +40,7 @@ coordinator:
       bundled: ../../../target/wasm32-unknown-unknown/release/helpinghands.wasm
       dependencies:
         - name: helpinghands_integrity
+    - name: chat
+      bundled: ../../../target/wasm32-unknown-unknown/release/chat.wasm
+      dependencies:
+        - name: chat_integrity
