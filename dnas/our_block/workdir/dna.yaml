@@ -10,6 +10,8 @@ integrity:
       bundled: ../../../target/wasm32-unknown-unknown/release/profile_integrity.wasm
     - name: vouch_integrity
       bundled: ../../../target/wasm32-unknown-unknown/release/vouch_integrity.wasm
+    - name: feed_integrity
+      bundled: ../../../target/wasm32-unknown-unknown/release/feed_integrity.wasm
 coordinator:
   zomes:
     - name: profile
@@ -20,3 +22,7 @@ coordinator:
       bundled: ../../../target/wasm32-unknown-unknown/release/vouch.wasm
       dependencies:
         - name: vouch_integrity
+    - name: feed
+      bundled: ../../../target/wasm32-unknown-unknown/release/feed.wasm
+      dependencies:
+        - name: feed_integrity
