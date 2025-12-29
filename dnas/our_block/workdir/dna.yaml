@@ -12,6 +12,8 @@ integrity:
       bundled: ../../../target/wasm32-unknown-unknown/release/vouch_integrity.wasm
     - name: feed_integrity
       bundled: ../../../target/wasm32-unknown-unknown/release/feed_integrity.wasm
+    - name: toolshed_integrity
+      bundled: ../../../target/wasm32-unknown-unknown/release/toolshed_integrity.wasm
 coordinator:
   zomes:
     - name: profile
@@ -26,3 +28,7 @@ coordinator:
       bundled: ../../../target/wasm32-unknown-unknown/release/feed.wasm
       dependencies:
         - name: feed_integrity
+    - name: toolshed
+      bundled: ../../../target/wasm32-unknown-unknown/release/toolshed.wasm
+      dependencies:
+        - name: toolshed_integrity

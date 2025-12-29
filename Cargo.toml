@@ -4,15 +4,17 @@ members = [
     "dnas/our_block/zomes/integrity/profile",
     "dnas/our_block/zomes/integrity/vouch",
     "dnas/our_block/zomes/integrity/feed",
+    "dnas/our_block/zomes/integrity/toolshed",
     "dnas/our_block/zomes/coordinator/profile",
     "dnas/our_block/zomes/coordinator/vouch",
     "dnas/our_block/zomes/coordinator/feed",
+    "dnas/our_block/zomes/coordinator/toolshed",
 ]
 
 [workspace.dependencies]
 # Holochain dependencies - using compatible versions
-hdi = "0.5"
-hdk = "0.4"
+hdi = { version = "0.5", features = ["unstable-functions"] }
+hdk = { version = "0.4", features = ["unstable-functions"] }
 serde = "1"
 
 [profile.dev]
