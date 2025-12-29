@@ -2,12 +2,16 @@ import { useState, useEffect } from 'react';
 import { HolochainProvider } from './contexts/HolochainContext';
 import { ProfileForm } from './components/ProfileForm';
 import { ProfileDisplay } from './components/ProfileDisplay';
+import { PostFeed } from './components/PostFeed';
 import { useHolochain } from './contexts/HolochainContext';
 import './App.css';
+
+type View = 'profile' | 'feed';
 
 function AppContent() {
   const { client, isConnected, error } = useHolochain();
   const [hasProfile, setHasProfile] = useState(false);
+  const [currentView, setCurrentView] = useState<View>('feed');
 
   if (error) {
     return (
@@ -46,9 +50,25 @@ function AppContent() {
       <header className="app-header">
         <h1>🏘️ OurBlock</h1>
         <p className="tagline">Your Neighborhood Community</p>
+        <nav className="app-nav">
+          <button 
+            className={`nav-btn ${currentView === 'feed' ? 'active' : ''}`}
+            onClick={() => setCurrentView('feed')}
+          >
+            📰 Feed
+          </button>
+          <button 
+            className={`nav-btn ${currentView === 'profile' ? 'active' : ''}`}
+            onClick={() => setCurrentView('profile')}
+          >
+            👤 Profile
+          </button>
+        </nav>
       </header>
       <main className="app-main">
-        {!hasProfile ? (
+        {currentView === 'feed' ? (
+          <PostFeed />
+        ) : !hasProfile ? (
           <ProfileForm onProfileCreated={() => setHasProfile(true)} />
         ) : (
           <ProfileDisplay />
