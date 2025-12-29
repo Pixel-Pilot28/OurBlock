@@ -3,10 +3,12 @@ import { HolochainProvider } from './contexts/HolochainContext';
 import { ProfileForm } from './components/ProfileForm';
 import { ProfileDisplay } from './components/ProfileDisplay';
 import { PostFeed } from './components/PostFeed';
+import { ItemGallery } from './components/ItemGallery';
+import { MyGarage } from './components/MyGarage';
 import { useHolochain } from './contexts/HolochainContext';
 import './App.css';
 
-type View = 'profile' | 'feed';
+type View = 'profile' | 'feed' | 'toolshed' | 'garage';
 
 function AppContent() {
   const { client, isConnected, error } = useHolochain();
@@ -58,6 +60,18 @@ function AppContent() {
             📰 Feed
           </button>
           <button 
+            className={`nav-btn ${currentView === 'toolshed' ? 'active' : ''}`}
+            onClick={() => setCurrentView('toolshed')}
+          >
+            🔧 Tool Shed
+          </button>
+          <button 
+            className={`nav-btn ${currentView === 'garage' ? 'active' : ''}`}
+            onClick={() => setCurrentView('garage')}
+          >
+            🏠 My Garage
+          </button>
+          <button 
             className={`nav-btn ${currentView === 'profile' ? 'active' : ''}`}
             onClick={() => setCurrentView('profile')}
           >
@@ -68,6 +82,10 @@ function AppContent() {
       <main className="app-main">
         {currentView === 'feed' ? (
           <PostFeed />
+        ) : currentView === 'toolshed' ? (
+          <ItemGallery />
+        ) : currentView === 'garage' ? (
+          <MyGarage />
         ) : !hasProfile ? (
           <ProfileForm onProfileCreated={() => setHasProfile(true)} />
         ) : (

@@ -1,0 +1,249 @@
+.my-garage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* Header */
+.garage-header h2 {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: 1.75rem;
+}
+
+.garage-subtitle {
+  margin: var(--spacing-xs) 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+/* Tabs */
+.garage-tabs {
+  display: flex;
+  gap: var(--spacing-xs);
+  background: var(--color-surface);
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+
+.garage-tab {
+  flex: 1;
+  min-width: fit-content;
+  padding: var(--spacing-md);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.garage-tab:hover {
+  color: var(--color-text);
+  background: var(--color-background);
+}
+
+.garage-tab.active {
+  background: var(--color-primary);
+  color: white;
+  font-weight: 600;
+}
+
+/* Loading State */
+.garage-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--spacing-xl) * 2);
+  color: var(--color-text-muted);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--spacing-md);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error State */
+.garage-error {
+  background: #ffebee;
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  text-align: center;
+}
+
+.garage-error p {
+  margin: 0 0 var(--spacing-md);
+  color: var(--color-error);
+}
+
+.garage-error button {
+  background: var(--color-error);
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+/* Content */
+.garage-content {
+  min-height: 300px;
+}
+
+.tab-content {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: calc(var(--spacing-xl) * 2);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.empty-state h3 {
+  margin: 0 0 var(--spacing-sm);
+  color: var(--color-text);
+}
+
+.empty-state p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* Items Grid */
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+/* Borrows List */
+.borrows-list,
+.requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.borrow-card,
+.request-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+  gap: var(--spacing-lg);
+}
+
+.borrow-info h4,
+.request-info h4 {
+  margin: 0 0 var(--spacing-xs);
+  color: var(--color-text);
+}
+
+.borrow-meta,
+.request-meta {
+  display: flex;
+  gap: var(--spacing-md);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.borrow-notes,
+.request-message {
+  margin: var(--spacing-sm) 0 0;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  font-style: italic;
+}
+
+.return-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--color-success);
+  border: none;
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.return-btn:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+.status-pending {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: #fff3e0;
+  color: #f57c00;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .borrow-card,
+  .request-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .borrow-meta,
+  .request-meta {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .borrow-actions,
+  .request-status {
+    width: 100%;
+  }
+
+  .return-btn {
+    width: 100%;
+  }
+
+  .items-grid {
+    grid-template-columns: 1fr;
+  }
+}
