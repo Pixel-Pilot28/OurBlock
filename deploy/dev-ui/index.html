@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OurBlock - Development Mode</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .container {
+            text-align: center;
+            padding: 3rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            max-width: 600px;
+        }
+        
+        .logo {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1.5rem;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .feature {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 12px;
+        }
+        
+        .feature .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .feature .name {
+            font-size: 0.9rem;
+        }
+        
+        .links {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        
+        .links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            transition: background 0.2s;
+        }
+        
+        .links a:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .status {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(76, 175, 80, 0.3);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🏘️</div>
+        <h1>OurBlock</h1>
+        <p class="subtitle">Decentralized Neighborhood Community</p>
+        
+        <div class="badge">🔧 Development Mode</div>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="icon">👤</div>
+                <div class="name">Profiles</div>
+            </div>
+            <div class="feature">
+                <div class="icon">🤝</div>
+                <div class="name">Vouching</div>
+            </div>
+            <div class="feature">
+                <div class="icon">📋</div>
+                <div class="name">Feed</div>
+            </div>
+            <div class="feature">
+                <div class="icon">🔧</div>
+                <div class="name">Tool Shed</div>
+            </div>
+            <div class="feature">
+                <div class="icon">🙋</div>
+                <div class="name">Helping Hands</div>
+            </div>
+            <div class="feature">
+                <div class="icon">💬</div>
+                <div class="name">Chat</div>
+            </div>
+        </div>
+        
+        <div class="links">
+            <a href="http://localhost:8080">📊 Status Dashboard</a>
+        </div>
+        
+        <div class="status">
+            ✅ Development server running<br>
+            <small>This is a placeholder UI for testing the deployment infrastructure.</small>
+        </div>
+    </div>
+</body>
+</html>

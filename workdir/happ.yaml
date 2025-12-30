@@ -1,5 +1,5 @@
 ---
-manifest_version: "1"
+manifest_version: 0
 name: our_block
 description: "OurBlock - A decentralized neighborhood community platform"
 roles:
@@ -8,9 +8,7 @@ roles:
       strategy: create
       deferred: false
     dna:
-      bundled: ../dnas/our_block/workdir/our_block.dna
+      path: ../dnas/our_block/workdir/our_block.dna
       modifiers:
         network_seed: ~
         properties: ~
-        origin_time: ~
-        quantum_time: ~

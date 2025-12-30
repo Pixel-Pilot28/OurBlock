@@ -87,7 +87,7 @@ pub fn create_vouch(input: CreateVouchInput) -> ExternResult<VouchOutput> {
     let vouch = Vouch {
         vouchee: input.vouchee.clone(),
         vouch_type: input.vouch_type,
-        timestamp: sys_time()?,
+        created_at: sys_time()?,
         note: input.note,
     };
     
@@ -100,7 +100,7 @@ pub fn create_vouch(input: CreateVouchInput) -> ExternResult<VouchOutput> {
     create_link(
         voucher.clone(),
         entry_hash.clone(),
-        LinkTypes::VoucherToVouch,
+        LinkTypes::AgentToVouchesGiven,
         (),
     )?;
     
@@ -108,7 +108,7 @@ pub fn create_vouch(input: CreateVouchInput) -> ExternResult<VouchOutput> {
     create_link(
         input.vouchee.clone(),
         entry_hash.clone(),
-        LinkTypes::VoucheeToVouch,
+        LinkTypes::AgentToVouchesReceived,
         (),
     )?;
     
@@ -124,7 +124,7 @@ pub fn create_vouch(input: CreateVouchInput) -> ExternResult<VouchOutput> {
 #[hdk_extern]
 pub fn get_vouches_for(agent: AgentPubKey) -> ExternResult<Vec<VouchInfo>> {
     let links = get_links(
-        GetLinksInputBuilder::try_new(agent.clone(), LinkTypes::VoucheeToVouch)?.build(),
+        GetLinksInputBuilder::try_new(agent.clone(), LinkTypes::AgentToVouchesReceived)?.build(),
     )?;
     
     let anchors = get_all_anchors(())?;
@@ -167,7 +167,7 @@ pub fn get_vouches_for(agent: AgentPubKey) -> ExternResult<Vec<VouchInfo>> {
 pub fn vouch_for_neighbor(target_agent: AgentPubKey) -> ExternResult<VouchOutput> {
     create_vouch(CreateVouchInput {
         vouchee: target_agent,
-        vouch_type: VouchType::PhysicalHandshake,
+        vouch_type: VouchType::Neighbor,
         note: None,
     })
 }
@@ -192,7 +192,7 @@ pub fn is_verified(agent: AgentPubKey) -> ExternResult<bool> {
     let info = get_membership_status(agent)?;
     Ok(matches!(
         info.status,
-        MembershipStatus::Verified | MembershipStatus::TrustedAnchor
+        MembershipStatus::Verified | MembershipStatus::Anchor
     ))
 }
 
@@ -206,7 +206,7 @@ pub fn am_i_verified(_: ()) -> ExternResult<bool> {
 /// Get all vouches that an agent has given to others
 fn get_vouches_given_by(agent: AgentPubKey) -> ExternResult<Vec<VouchOutput>> {
     let links = get_links(
-        GetLinksInputBuilder::try_new(agent.clone(), LinkTypes::VoucherToVouch)?.build(),
+        GetLinksInputBuilder::try_new(agent.clone(), LinkTypes::AgentToVouchesGiven)?.build(),
     )?;
     
     let mut vouches = Vec::new();
@@ -246,6 +246,12 @@ pub fn get_my_given_vouches(_: ()) -> ExternResult<Vec<VouchOutput>> {
 // MEMBERSHIP STATUS FUNCTIONS
 // ============================================================================
 
+/// Check if vouch threshold is met for verification
+fn vouch_threshold_met(_is_anchor: bool, vouches_from_anchors: usize, vouches_from_members: usize) -> bool {
+    // 1 vouch from anchor OR 2+ vouches from verified members
+    vouches_from_anchors >= ANCHOR_VOUCHES_REQUIRED || vouches_from_members >= VOUCHES_REQUIRED
+}
+
 /// Get the membership status for an agent
 #[hdk_extern]
 pub fn get_membership_status(agent: AgentPubKey) -> ExternResult<MembershipInfo> {
@@ -260,17 +266,13 @@ pub fn get_membership_status(agent: AgentPubKey) -> ExternResult<MembershipInfo>
     let vouches_from_anchors = vouches_received.iter().filter(|v| v.is_from_anchor).count();
     let vouches_from_members = vouches_received.len(); // Total vouches (simplified)
     
-    // Determine status
+    // Determine status (using only Pending, Verified, Anchor from integrity)
     let status = if is_anchor {
-        MembershipStatus::TrustedAnchor
+        MembershipStatus::Anchor
     } else if vouch_threshold_met(is_anchor, vouches_from_anchors, vouches_from_members) {
         MembershipStatus::Verified
-    } else if vouches_received.is_empty() {
-        MembershipStatus::Pending
     } else {
-        MembershipStatus::PartiallyVouched {
-            vouch_count: vouches_received.len(),
-        }
+        MembershipStatus::Pending
     };
     
     Ok(MembershipInfo {
@@ -295,7 +297,7 @@ pub fn can_participate(agent: AgentPubKey) -> ExternResult<bool> {
     let info = get_membership_status(agent)?;
     Ok(matches!(
         info.status,
-        MembershipStatus::Verified | MembershipStatus::TrustedAnchor
+        MembershipStatus::Verified | MembershipStatus::Anchor
     ))
 }
 
@@ -337,8 +339,7 @@ pub fn initialize_as_anchor(_: ()) -> ExternResult<TrustedAnchor> {
     // Create the anchor entry
     let anchor = TrustedAnchor {
         agent: agent.clone(),
-        designated_at: sys_time()?,
-        designated_by: agent.clone(), // Self-designation for founder
+        created_at: sys_time()?,
     };
     
     let action_hash = create_entry(EntryTypes::TrustedAnchor(anchor.clone()))?;
@@ -376,8 +377,7 @@ pub fn designate_anchor(new_anchor_agent: AgentPubKey) -> ExternResult<TrustedAn
     // Create the anchor entry
     let anchor = TrustedAnchor {
         agent: new_anchor_agent,
-        designated_at: sys_time()?,
-        designated_by: designator,
+        created_at: sys_time()?,
     };
     
     let action_hash = create_entry(EntryTypes::TrustedAnchor(anchor.clone()))?;

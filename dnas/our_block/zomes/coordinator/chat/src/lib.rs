@@ -34,8 +34,12 @@ pub struct SendReadReceiptInput {
 /// ───────────────────────────────────────────────────────────────────────────
 
 fn online_agents_anchor() -> ExternResult<EntryHash> {
-    let anchor_bytes = "online_agents".as_bytes().to_vec();
-    hash_entry(&anchor_bytes)
+    // Use a ChatPresence entry as the anchor
+    let presence = ChatPresence {
+        agent: AgentPubKey::from_raw_36(vec![0u8; 36]),
+        online: false,
+    };
+    hash_entry(&presence)
 }
 
 /// ───────────────────────────────────────────────────────────────────────────
@@ -43,7 +47,7 @@ fn online_agents_anchor() -> ExternResult<EntryHash> {
 /// ───────────────────────────────────────────────────────────────────────────
 
 /// Send an ephemeral message to a specific agent
-/// This uses remote_signal - message is NOT stored in the DHT
+/// This uses send_remote_signal - message is NOT stored in the DHT
 #[hdk_extern]
 pub fn send_message(input: SendMessageInput) -> ExternResult<SendMessageOutput> {
     // Validate message length
@@ -59,15 +63,17 @@ pub fn send_message(input: SendMessageInput) -> ExternResult<SendMessageOutput> 
         ))));
     }
 
-    let sender = agent_info()?.agent_latest_pubkey;
+    let sender = agent_info()?.agent_initial_pubkey;
     let timestamp = sys_time()?.as_millis() as i64;
     
     // Generate a unique message ID
+    let rand_bytes = random_bytes(4)?;
+    let rand_hex: String = rand_bytes.iter().map(|b| format!("{:02x}", b)).collect();
     let message_id = format!(
         "{}-{}-{}",
-        hex_encode(&sender),
+        hex_encode(sender.get_raw_36()),
         timestamp,
-        random_bytes(4)?.iter().map(|b| format!("{:02x}", b)).collect::<String>()
+        rand_hex
     );
 
     let chat_message = ChatMessage {
@@ -80,7 +86,7 @@ pub fn send_message(input: SendMessageInput) -> ExternResult<SendMessageOutput> 
     let signal = ChatSignal::Message(chat_message);
 
     // Send remote signal to recipient (ephemeral, not stored)
-    remote_signal(ExternIO::encode(signal)?, vec![input.recipient])?;
+    send_remote_signal(signal, vec![input.recipient])?;
 
     Ok(SendMessageOutput {
         message_id,
@@ -92,10 +98,10 @@ pub fn send_message(input: SendMessageInput) -> ExternResult<SendMessageOutput> 
 /// Send typing indicator to a specific agent
 #[hdk_extern]
 pub fn send_typing(input: SendTypingInput) -> ExternResult<()> {
-    let sender = agent_info()?.agent_latest_pubkey;
+    let sender = agent_info()?.agent_initial_pubkey;
     
     let signal = ChatSignal::Typing { sender };
-    remote_signal(ExternIO::encode(signal)?, vec![input.recipient])?;
+    send_remote_signal(signal, vec![input.recipient])?;
     
     Ok(())
 }
@@ -103,13 +109,13 @@ pub fn send_typing(input: SendTypingInput) -> ExternResult<()> {
 /// Send read receipt to a specific agent
 #[hdk_extern]
 pub fn send_read_receipt(input: SendReadReceiptInput) -> ExternResult<()> {
-    let sender = agent_info()?.agent_latest_pubkey;
+    let sender = agent_info()?.agent_initial_pubkey;
     
     let signal = ChatSignal::Read {
         sender,
         message_id: input.message_id,
     };
-    remote_signal(ExternIO::encode(signal)?, vec![input.recipient])?;
+    send_remote_signal(signal, vec![input.recipient])?;
     
     Ok(())
 }
@@ -117,7 +123,7 @@ pub fn send_read_receipt(input: SendReadReceiptInput) -> ExternResult<()> {
 /// Announce that this agent is online (broadcasts to known agents)
 #[hdk_extern]
 pub fn announce_online(agents: Vec<AgentPubKey>) -> ExternResult<()> {
-    let me = agent_info()?.agent_latest_pubkey;
+    let me = agent_info()?.agent_initial_pubkey;
     
     // Add self to online agents anchor
     let anchor = online_agents_anchor()?;
@@ -126,7 +132,7 @@ pub fn announce_online(agents: Vec<AgentPubKey>) -> ExternResult<()> {
     // Notify specified agents
     if !agents.is_empty() {
         let signal = ChatSignal::Online { agent: me };
-        remote_signal(ExternIO::encode(signal)?, agents)?;
+        send_remote_signal(signal, agents)?;
     }
     
     Ok(())
@@ -135,11 +141,11 @@ pub fn announce_online(agents: Vec<AgentPubKey>) -> ExternResult<()> {
 /// Announce that this agent is going offline
 #[hdk_extern]
 pub fn announce_offline(agents: Vec<AgentPubKey>) -> ExternResult<()> {
-    let me = agent_info()?.agent_latest_pubkey;
+    let me = agent_info()?.agent_initial_pubkey;
     
     if !agents.is_empty() {
         let signal = ChatSignal::Offline { agent: me };
-        remote_signal(ExternIO::encode(signal)?, agents)?;
+        send_remote_signal(signal, agents)?;
     }
     
     Ok(())
@@ -164,7 +170,7 @@ pub fn get_online_agents(_: ()) -> ExternResult<Vec<AgentPubKey>> {
 /// Get my agent public key (for UI to know who I am)
 #[hdk_extern]
 pub fn get_my_agent_key(_: ()) -> ExternResult<AgentPubKey> {
-    Ok(agent_info()?.agent_latest_pubkey)
+    Ok(agent_info()?.agent_initial_pubkey)
 }
 
 /// ───────────────────────────────────────────────────────────────────────────
@@ -194,16 +200,4 @@ pub fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
 
 fn hex_encode(bytes: &[u8]) -> String {
     bytes.iter().take(8).map(|b| format!("{:02x}", b)).collect()
-}
-
-fn random_bytes(len: usize) -> ExternResult<Vec<u8>> {
-    // Use sys_time as entropy source for simple random
-    let time = sys_time()?.as_micros();
-    let mut bytes = Vec::with_capacity(len);
-    let mut seed = time as u64;
-    for _ in 0..len {
-        seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
-        bytes.push((seed >> 33) as u8);
-    }
-    Ok(bytes)
 }

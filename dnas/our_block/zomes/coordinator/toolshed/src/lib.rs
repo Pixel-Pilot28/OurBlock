@@ -96,7 +96,7 @@ pub fn create_item(input: CreateItemInput) -> ExternResult<ItemOutput> {
     create_link(
         owner,
         action_hash.clone(),
-        LinkTypes::OwnerToItems,
+        LinkTypes::AgentToItems,
         (),
     )?;
     
@@ -161,7 +161,7 @@ pub fn get_my_items(_: ()) -> ExternResult<Vec<ItemOutput>> {
 #[hdk_extern]
 pub fn get_items_for_owner(owner: AgentPubKey) -> ExternResult<Vec<ItemOutput>> {
     let links = get_links(
-        GetLinksInputBuilder::try_new(owner, LinkTypes::OwnerToItems)?.build(),
+        GetLinksInputBuilder::try_new(owner, LinkTypes::AgentToItems)?.build(),
     )?;
     
     let mut items = Vec::new();
@@ -455,20 +455,12 @@ pub fn accept_borrow(input: AcceptBorrowInput) -> ExternResult<TransactionOutput
     
     // Create transaction record with Active status
     let txn_record = TransactionRecord {
-        transaction: transaction.clone(),
+        transaction_hash: txn_action_hash.clone(),
+        returned_at: None,
         status: TransactionStatus::Active,
-        updated_at: now,
     };
     
     create_entry(EntryTypes::TransactionRecord(txn_record))?;
-    
-    // Link transaction to item
-    create_link(
-        request.item_hash.clone(),
-        txn_action_hash.clone(),
-        LinkTypes::ItemToTransactions,
-        (),
-    )?;
     
     // Link transaction to both agents
     create_link(
@@ -543,9 +535,9 @@ pub fn return_item(transaction_hash: ActionHash) -> ExternResult<TransactionOutp
     
     // Create updated transaction record
     let txn_record = TransactionRecord {
-        transaction: transaction.clone(),
+        transaction_hash: transaction_hash.clone(),
+        returned_at: Some(sys_time()?),
         status: TransactionStatus::Returned,
-        updated_at: sys_time()?,
     };
     
     create_entry(EntryTypes::TransactionRecord(txn_record))?;

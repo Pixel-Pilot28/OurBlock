@@ -1,46 +1,45 @@
 ---
-manifest_version: "1"
+manifest_version: 0
 name: our_block
 integrity:
-  origin_time: 2024-01-01T00:00:00.000000Z
   network_seed: ~
   properties: ~
   zomes:
     - name: profile_integrity
-      bundled: ../../../target/wasm32-unknown-unknown/release/profile_integrity.wasm
+      path: ../../../target/wasm32-unknown-unknown/release/profile_integrity.wasm
     - name: vouch_integrity
-      bundled: ../../../target/wasm32-unknown-unknown/release/vouch_integrity.wasm
+      path: ../../../target/wasm32-unknown-unknown/release/vouch_integrity.wasm
     - name: feed_integrity
-      bundled: ../../../target/wasm32-unknown-unknown/release/feed_integrity.wasm
+      path: ../../../target/wasm32-unknown-unknown/release/feed_integrity.wasm
     - name: toolshed_integrity
-      bundled: ../../../target/wasm32-unknown-unknown/release/toolshed_integrity.wasm
+      path: ../../../target/wasm32-unknown-unknown/release/toolshed_integrity.wasm
     - name: helpinghands_integrity
-      bundled: ../../../target/wasm32-unknown-unknown/release/helpinghands_integrity.wasm
+      path: ../../../target/wasm32-unknown-unknown/release/helpinghands_integrity.wasm
     - name: chat_integrity
-      bundled: ../../../target/wasm32-unknown-unknown/release/chat_integrity.wasm
+      path: ../../../target/wasm32-unknown-unknown/release/chat_integrity.wasm
 coordinator:
   zomes:
     - name: profile
-      bundled: ../../../target/wasm32-unknown-unknown/release/profile.wasm
+      path: ../../../target/wasm32-unknown-unknown/release/profile.wasm
       dependencies:
         - name: profile_integrity
     - name: vouch
-      bundled: ../../../target/wasm32-unknown-unknown/release/vouch.wasm
+      path: ../../../target/wasm32-unknown-unknown/release/vouch.wasm
       dependencies:
         - name: vouch_integrity
     - name: feed
-      bundled: ../../../target/wasm32-unknown-unknown/release/feed.wasm
+      path: ../../../target/wasm32-unknown-unknown/release/feed.wasm
       dependencies:
         - name: feed_integrity
     - name: toolshed
-      bundled: ../../../target/wasm32-unknown-unknown/release/toolshed.wasm
+      path: ../../../target/wasm32-unknown-unknown/release/toolshed.wasm
       dependencies:
         - name: toolshed_integrity
     - name: helpinghands
-      bundled: ../../../target/wasm32-unknown-unknown/release/helpinghands.wasm
+      path: ../../../target/wasm32-unknown-unknown/release/helpinghands.wasm
       dependencies:
         - name: helpinghands_integrity
     - name: chat
-      bundled: ../../../target/wasm32-unknown-unknown/release/chat.wasm
+      path: ../../../target/wasm32-unknown-unknown/release/chat.wasm
       dependencies:
         - name: chat_integrity

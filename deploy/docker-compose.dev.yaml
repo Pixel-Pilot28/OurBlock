@@ -1,0 +1,75 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# OurBlock Edge Node - Development/Testing Docker Compose
+# 
+# Use this for local testing without published images.
+# It uses placeholder services to test the status dashboard.
+#
+# Usage:
+#   cd deploy
+#   docker compose -f docker-compose.dev.yaml up -d
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Mock Conductor - Simulates Holochain for testing
+  # ─────────────────────────────────────────────────────────────────────────────
+  ourblock:
+    image: python:3.11-alpine
+    container_name: ourblock-conductor
+    restart: unless-stopped
+    working_dir: /app
+    command: ["sh", "-c", "pip install flask --quiet && python /app/mock_conductor.py"]
+    volumes:
+      - ./mock-conductor:/app:ro
+    ports:
+      - "8001:8001"
+      - "8888:8888"
+    networks:
+      - ourblock-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Status Dashboard - Node Monitoring Web UI
+  # ─────────────────────────────────────────────────────────────────────────────
+  status:
+    build:
+      context: ./status-dashboard
+      dockerfile: Dockerfile
+    image: ourblock/status-dashboard:latest
+    container_name: ourblock-status
+    restart: unless-stopped
+    depends_on:
+      ourblock:
+        condition: service_healthy
+    ports:
+      - "${STATUS_PORT:-8080}:8080"
+    environment:
+      - NEIGHBORHOOD_ID=${NETWORK_SEED:-sunny-test-0001}
+      - CONDUCTOR_URL=http://ourblock:8001
+      - DATA_DIR=/data
+    networks:
+      - ourblock-network
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Mock UI - Simple placeholder web page
+  # ─────────────────────────────────────────────────────────────────────────────
+  ui:
+    image: nginx:alpine
+    container_name: ourblock-ui
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    volumes:
+      - ./dev-ui:/usr/share/nginx/html:ro
+    networks:
+      - ourblock-network
+
+networks:
+  ourblock-network:
+    driver: bridge

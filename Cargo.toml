@@ -16,9 +16,10 @@ members = [
 ]
 
 [workspace.dependencies]
-# Holochain dependencies - using compatible versions
-hdi = { version = "0.5", features = ["unstable-functions"] }
-hdk = { version = "0.4", features = ["unstable-functions"] }
+# Holochain dependencies - compatible with Holochain 0.7.x
+hdi = { version = "0.6", features = ["unstable-functions"] }
+hdk = { version = "0.5", features = ["unstable-functions"] }
+holochain_serialized_bytes = "0.0.56"
 serde = "1"
 
 [profile.dev]

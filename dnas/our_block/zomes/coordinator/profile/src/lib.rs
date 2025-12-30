@@ -45,7 +45,7 @@ pub fn create_profile(input: CreateProfileInput) -> ExternResult<ProfileOutput> 
     let profile = Profile {
         nickname: input.nickname,
         bio: input.bio,
-        created_at: sys_time()?,
+        avatar_hash: None,
     };
 
     let action_hash = create_entry(EntryTypes::Profile(profile.clone()))?;
@@ -84,7 +84,7 @@ pub fn update_profile(input: CreateProfileInput) -> ExternResult<ProfileOutput> 
     let profile = Profile {
         nickname: input.nickname,
         bio: input.bio,
-        created_at: sys_time()?,
+        avatar_hash: None,
     };
 
     let action_hash = update_entry(existing.action_hash.clone(), &profile)?;
