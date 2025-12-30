@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OurBlock Status - {{ neighborhood_id }}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏘️</text></svg>">
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --primary-dark: #388E3C;
+            --primary-light: #C8E6C9;
+            --danger: #f44336;
+            --warning: #ff9800;
+            --info: #2196F3;
+            --background: #f5f5f5;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --text-light: #666666;
+            --border: #e0e0e0;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background: #121212;
+                --card-bg: #1e1e1e;
+                --text: #e0e0e0;
+                --text-light: #a0a0a0;
+                --border: #333333;
+            }
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header .neighborhood {
+            font-size: 1.2rem;
+            opacity: 0.95;
+            background: rgba(255,255,255,0.2);
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            border-radius: 999px;
+            margin-top: 0.5rem;
+        }
+        
+        .status-indicator {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            font-size: 0.875rem;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.online {
+            background: #69f0ae;
+            box-shadow: 0 0 10px #69f0ae;
+        }
+        
+        .status-dot.offline {
+            background: #ff5252;
+            box-shadow: 0 0 10px #ff5252;
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .status-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid var(--border);
+        }
+        
+        .status-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        
+        .status-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .status-card .label {
+            color: var(--text-light);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .status-card .value {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+        
+        .status-card.online .value {
+            color: var(--primary);
+        }
+        
+        .status-card.offline .value {
+            color: var(--danger);
+        }
+        
+        .section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+        
+        .section h2 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .container-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .container-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: var(--background);
+            border-radius: 12px;
+        }
+        
+        .container-name {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .container-status {
+            padding: 0.35rem 1rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .container-status.running {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+        
+        .container-status.stopped, .container-status.not-found {
+            background: #ffebee;
+            color: var(--danger);
+        }
+        
+        .container-status.unknown {
+            background: #fff3e0;
+            color: var(--warning);
+        }
+        
+        .info-grid {
+            display: grid;
+            gap: 0.75rem;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-item a {
+            color: var(--info);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .info-item a:hover {
+            text-decoration: underline;
+        }
+        
+        .share-box {
+            background: var(--background);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .share-box label {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
+        .share-command {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .share-command input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            background: var(--card-bg);
+            color: var(--text);
+        }
+        
+        .share-command button {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        
+        .share-command button:hover {
+            background: var(--primary-dark);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(76, 175, 80, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .refresh-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
+        }
+        
+        .refresh-btn.spinning {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.75rem;
+            }
+            
+            .status-indicator {
+                position: static;
+                margin-top: 1rem;
+                justify-content: center;
+            }
+            
+            .status-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .share-command {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="status-indicator">
+            <span class="status-dot {{ 'online' if stats.online else 'offline' }}"></span>
+            <span>{{ 'Online' if stats.online else 'Offline' }}</span>
+        </div>
+        <div class="header-content">
+            <h1>🏘️ OurBlock Hub</h1>
+            <div class="neighborhood">{{ neighborhood_id }}</div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="status-grid">
+            <div class="status-card {{ 'online' if stats.online else 'offline' }}">
+                <div class="icon">{{ '🟢' if stats.online else '🔴' }}</div>
+                <div class="label">Node Status</div>
+                <div class="value">{{ 'Online' if stats.online else 'Offline' }}</div>
+            </div>
+            
+            <div class="status-card">
+                <div class="icon">⏱️</div>
+                <div class="label">Uptime</div>
+                <div class="value" id="uptime">{{ uptime_formatted }}</div>
+            </div>
+            
+            <div class="status-card">
+                <div class="icon">🤝</div>
+                <div class="label">Vouches</div>
+                <div class="value" id="vouches">{{ stats.vouches_processed }}</div>
+            </div>
+            
+            <div class="status-card">
+                <div class="icon">💾</div>
+                <div class="label">Storage</div>
+                <div class="value" id="storage">{{ "%.1f"|format(stats.storage_used_mb) }} MB</div>
+            </div>
+            
+            <div class="status-card">
+                <div class="icon">👥</div>
+                <div class="label">Peers</div>
+                <div class="value" id="peers">{{ stats.peers_connected }}</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🐳 Services</h2>
+            <div class="container-list" id="containers">
+                <div class="container-item">
+                    <span class="container-name">
+                        <span>⚡</span>
+                        Holochain Conductor
+                    </span>
+                    <span class="container-status {{ stats.containers.conductor|replace(' ', '-') if stats.containers.conductor else 'unknown' }}">
+                        {{ stats.containers.conductor or 'unknown' }}
+                    </span>
+                </div>
+                <div class="container-item">
+                    <span class="container-name">
+                        <span>🔐</span>
+                        Lair Keystore
+                    </span>
+                    <span class="container-status {{ stats.containers.lair|replace(' ', '-') if stats.containers.lair else 'unknown' }}">
+                        {{ stats.containers.lair or 'unknown' }}
+                    </span>
+                </div>
+                <div class="container-item">
+                    <span class="container-name">
+                        <span>🌐</span>
+                        Web UI
+                    </span>
+                    <span class="container-status {{ stats.containers.ui|replace(' ', '-') if stats.containers.ui else 'unknown' }}">
+                        {{ stats.containers.ui or 'unknown' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🔗 Connection Info</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span>OurBlock App</span>
+                    <a href="http://ourblock.local:3000" target="_blank">http://ourblock.local:3000</a>
+                </div>
+                <div class="info-item">
+                    <span>Status Dashboard</span>
+                    <a href="http://ourblock.local:8080" target="_blank">http://ourblock.local:8080</a>
+                </div>
+                <div class="info-item">
+                    <span>Neighborhood ID</span>
+                    <strong>{{ neighborhood_id }}</strong>
+                </div>
+            </div>
+            
+            <div class="share-box">
+                <label>📤 Share with neighbors - they can join by running:</label>
+                <div class="share-command">
+                    <input type="text" id="share-cmd" readonly 
+                           value="curl -fsSL https://ourblock.community/install.sh | bash -s -- -n {{ neighborhood_id }}">
+                    <button onclick="copyCommand()">Copy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <p>OurBlock - Decentralized Neighborhood Community</p>
+        <p>Last updated: <span id="last-update">{{ stats.last_update or 'Never' }}</span></p>
+    </footer>
+    
+    <button class="refresh-btn" onclick="refreshStats()" title="Refresh" id="refresh-btn">🔄</button>
+    
+    <script>
+        async function refreshStats() {
+            const btn = document.getElementById('refresh-btn');
+            btn.classList.add('spinning');
+            
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                // Update values with animation
+                updateValue('uptime', data.uptime_formatted);
+                updateValue('vouches', data.vouches_processed);
+                updateValue('storage', data.storage_used_mb.toFixed(1) + ' MB');
+                updateValue('peers', data.peers_connected);
+                
+                // Update last update time
+                const date = new Date(data.last_update);
+                document.getElementById('last-update').textContent = date.toLocaleString();
+                
+                // Update status indicator
+                const statusDot = document.querySelector('.status-dot');
+                const statusText = document.querySelector('.status-indicator span:last-child');
+                if (data.online) {
+                    statusDot.classList.add('online');
+                    statusDot.classList.remove('offline');
+                    statusText.textContent = 'Online';
+                } else {
+                    statusDot.classList.add('offline');
+                    statusDot.classList.remove('online');
+                    statusText.textContent = 'Offline';
+                }
+                
+            } catch (error) {
+                console.error('Failed to refresh stats:', error);
+            } finally {
+                btn.classList.remove('spinning');
+            }
+        }
+        
+        function updateValue(id, value) {
+            const el = document.getElementById(id);
+            if (el && el.textContent !== String(value)) {
+                el.style.transition = 'opacity 0.2s';
+                el.style.opacity = '0.5';
+                setTimeout(() => {
+                    el.textContent = value;
+                    el.style.opacity = '1';
+                }, 200);
+            }
+        }
+        
+        function copyCommand() {
+            const input = document.getElementById('share-cmd');
+            input.select();
+            document.execCommand('copy');
+            
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            btn.style.background = '#388E3C';
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = '';
+            }, 2000);
+        }
+        
+        // Auto-refresh every 30 seconds
+        setInterval(refreshStats, 30000);
+        
+        // Initial refresh after page load
+        setTimeout(refreshStats, 1000);
+    </script>
+</body>
+</html>

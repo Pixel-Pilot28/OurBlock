@@ -1,0 +1,53 @@
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<!--
+  OurBlock Avahi/mDNS Service Definition
+  
+  This file enables zero-configuration networking so that neighbors
+  can discover the OurBlock Hub on the local network without knowing
+  the IP address. Simply use:
+  
+    http://ourblock.local:3000  - OurBlock App
+    http://ourblock.local:8080  - Status Dashboard
+  
+  Requirements:
+    - avahi-daemon running on the host
+    - mDNS/Bonjour support on client devices (built into iOS, macOS, Linux)
+    - For Windows: Install Bonjour Print Services or iTunes
+-->
+<service-group>
+  <name replace-wildcards="yes">OurBlock Hub on %h</name>
+  
+  <!-- Main OurBlock Application -->
+  <service>
+    <type>_http._tcp</type>
+    <port>3000</port>
+    <txt-record>path=/</txt-record>
+    <txt-record>name=OurBlock</txt-record>
+    <txt-record>type=holochain-app</txt-record>
+  </service>
+  
+  <!-- Custom OurBlock Discovery Protocol -->
+  <service>
+    <type>_ourblock._tcp</type>
+    <port>8888</port>
+    <txt-record>version=1.0</txt-record>
+    <txt-record>protocol=holochain</txt-record>
+  </service>
+  
+  <!-- Status Dashboard -->
+  <service>
+    <type>_http._tcp</type>
+    <subtype>_ourblock-status._sub._http._tcp</subtype>
+    <port>8080</port>
+    <txt-record>path=/</txt-record>
+    <txt-record>name=OurBlock Status</txt-record>
+  </service>
+  
+  <!-- WebSocket for Holochain Client -->
+  <service>
+    <type>_ws._tcp</type>
+    <port>8888</port>
+    <txt-record>protocol=holochain</txt-record>
+  </service>
+</service-group>

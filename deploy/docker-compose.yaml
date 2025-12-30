@@ -95,6 +95,51 @@ services:
       - ourblock-network
 
   # ─────────────────────────────────────────────────────────────────────────────
+  # Status Dashboard - Node Monitoring Web UI
+  # ─────────────────────────────────────────────────────────────────────────────
+  status:
+    build:
+      context: ./status-dashboard
+      dockerfile: Dockerfile
+    image: ourblock/status-dashboard:latest
+    container_name: ourblock-status
+    restart: unless-stopped
+    depends_on:
+      - ourblock
+    ports:
+      - "${STATUS_PORT:-8080}:8080"
+    volumes:
+      - conductor_data:/data:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - NEIGHBORHOOD_ID=${NETWORK_SEED:-ourblock-neighborhood-001}
+      - CONDUCTOR_URL=http://ourblock:8001
+      - DATA_DIR=/data
+    networks:
+      - ourblock-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Avahi/mDNS - Zero-Configuration Network Discovery
+  # Enables ourblock.local hostname on local network
+  # ─────────────────────────────────────────────────────────────────────────────
+  avahi:
+    image: flungo/avahi:latest
+    container_name: ourblock-avahi
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./avahi:/etc/avahi/services:ro
+    environment:
+      - AVAHI_HOSTNAME=ourblock
+    profiles:
+      - mdns
+
+  # ─────────────────────────────────────────────────────────────────────────────
   # Bootstrap Service - Local Kitsune2 for Offline Mesh (Optional)
   # Uncomment to run your own bootstrap/signal server
   # ─────────────────────────────────────────────────────────────────────────────
