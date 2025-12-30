@@ -1,0 +1,64 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# OurBlock Holochain Conductor Configuration
+# ═══════════════════════════════════════════════════════════════════════════════
+
+---
+# Environment variables will be substituted at runtime
+environment_path: /data/environment
+
+# Data root directory
+data_root_path: /data
+
+# Lair keystore connection
+keystore:
+  type: lair_server
+  connection_url: "${LAIR_KEYSTORE_URL}"
+
+# Admin interface configuration
+admin_interfaces:
+  - driver:
+      type: websocket
+      port: 8001
+      allowed_origins: "*"
+
+# Network configuration (Kitsune2)
+network:
+  # Network type: quic, webrtc, or mem (for testing)
+  network_type: quic
+  
+  # Bootstrap service URL
+  bootstrap_service: "${BOOTSTRAP_URL}"
+  
+  # Transport configuration
+  transport_pool:
+    - type: webrtc
+      signal_url: "${SIGNAL_URL}"
+  
+  # Network tuning for edge nodes (24/7 operation)
+  tuning_params:
+    # How often to gossip with peers
+    gossip_loop_iteration_delay_ms: 1000
+    
+    # Maximum concurrent gossip rounds
+    gossip_outbound_target_mbps: 10
+    
+    # Peer discovery settings
+    gossip_peer_on_success_next_gossip_delay_ms: 60000
+    gossip_peer_on_error_next_gossip_delay_ms: 300000
+    
+    # Agent info expiration (24 hours)
+    agent_info_expires_after_ms: 86400000
+    
+    # Op store tuning for edge nodes
+    danger_gossip_recent_threshold_secs: 900
+
+# DPKI configuration (optional, for production networks)
+# dpki:
+#   instance_id: "ourblock-dpki"
+#   init_config:
+#     dna_hash: "<dpki-dna-hash>"
+
+# Conductor behavior
+conductor:
+  # Enable tracing for debugging
+  tracing: false

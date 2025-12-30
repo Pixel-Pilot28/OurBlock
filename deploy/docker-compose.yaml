@@ -1,0 +1,177 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# OurBlock Edge Node - Docker Compose Configuration
+# 
+# This compose file sets up the complete OurBlock neighborhood node including:
+#   - OurBlock Conductor: Runs the Holochain hApp
+#   - Lair Keystore: Manages cryptographic keys securely
+#   - Bootstrap Service: Local Kitsune2 for offline-mesh resilience (optional)
+#   - UI Server: Serves the web interface (optional)
+#
+# Usage:
+#   docker compose up -d              # Start all services
+#   docker compose logs -f ourblock   # View logs
+#   docker compose down               # Stop all services
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Lair Keystore - Cryptographic Key Management
+  # ─────────────────────────────────────────────────────────────────────────────
+  lair-keystore:
+    image: holochain/lair-keystore:0.5
+    container_name: ourblock-lair
+    restart: unless-stopped
+    volumes:
+      - lair_data:/lair
+    environment:
+      - LAIR_DIR=/lair
+      - LAIR_PASSPHRASE_FILE=/lair/.passphrase
+    networks:
+      - ourblock-network
+    healthcheck:
+      test: ["CMD", "lair-keystore", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # OurBlock Conductor - Main Holochain Node
+  # ─────────────────────────────────────────────────────────────────────────────
+  ourblock:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: ourblock/edge-node:latest
+    container_name: ourblock-conductor
+    restart: unless-stopped
+    depends_on:
+      lair-keystore:
+        condition: service_healthy
+    ports:
+      # Admin interface (internal use only in production)
+      - "8001:8001"
+      # App WebSocket interface for UI connections
+      - "8888:8888"
+    volumes:
+      - conductor_data:/data
+      - conductor_config:/config
+      - happ_data:/happs
+    environment:
+      - RUST_LOG=info
+      - HOLOCHAIN_ADMIN_PORT=8001
+      - HOLOCHAIN_APP_PORT=8888
+      - LAIR_KEYSTORE_URL=lair://lair-keystore:50000
+      - BOOTSTRAP_URL=${BOOTSTRAP_URL:-https://bootstrap.holo.host}
+      - SIGNAL_URL=${SIGNAL_URL:-wss://signal.holo.host}
+      # Network configuration
+      - NETWORK_SEED=${NETWORK_SEED:-ourblock-neighborhood-001}
+    networks:
+      - ourblock-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # UI Server - Serves the OurBlock Web Interface
+  # ─────────────────────────────────────────────────────────────────────────────
+  ui:
+    image: nginx:alpine
+    container_name: ourblock-ui
+    restart: unless-stopped
+    depends_on:
+      ourblock:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ui_static:/usr/share/nginx/html:ro
+    networks:
+      - ourblock-network
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Bootstrap Service - Local Kitsune2 for Offline Mesh (Optional)
+  # Uncomment to run your own bootstrap/signal server
+  # ─────────────────────────────────────────────────────────────────────────────
+  # bootstrap:
+  #   image: holochain/kitsune2-bootstrap:latest
+  #   container_name: ourblock-bootstrap
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8787:8787"
+  #   volumes:
+  #     - bootstrap_data:/data
+  #   environment:
+  #     - RUST_LOG=info
+  #     - BIND_ADDR=0.0.0.0:8787
+  #   networks:
+  #     - ourblock-network
+  #   profiles:
+  #     - mesh
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Signal Service - WebRTC Signaling for Peer Discovery (Optional)
+  # Uncomment for fully offline mesh network
+  # ─────────────────────────────────────────────────────────────────────────────
+  # signal:
+  #   image: holochain/kitsune2-signal:latest
+  #   container_name: ourblock-signal
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8989:8989"
+  #   volumes:
+  #     - signal_data:/data
+  #   environment:
+  #     - RUST_LOG=info
+  #     - BIND_ADDR=0.0.0.0:8989
+  #   networks:
+  #     - ourblock-network
+  #   profiles:
+  #     - mesh
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Networks
+# ─────────────────────────────────────────────────────────────────────────────
+networks:
+  ourblock-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Volumes - Persistent Data Storage
+# ─────────────────────────────────────────────────────────────────────────────
+volumes:
+  # Lair keystore data (keys, encrypted secrets)
+  lair_data:
+    driver: local
+  
+  # Holochain conductor data (DHT, source chain)
+  conductor_data:
+    driver: local
+  
+  # Conductor configuration
+  conductor_config:
+    driver: local
+  
+  # hApp bundles
+  happ_data:
+    driver: local
+  
+  # Static UI files
+  ui_static:
+    driver: local
+  
+  # Bootstrap service data (optional)
+  # bootstrap_data:
+  #   driver: local
+  
+  # Signal service data (optional)
+  # signal_data:
+  #   driver: local
