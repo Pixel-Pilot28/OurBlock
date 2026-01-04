@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useHolochain } from '../contexts/HolochainContext';
 import type { PostOutput } from '../types';
-import { MIN_TITLE_LENGTH, MAX_TITLE_LENGTH, MAX_CONTENT_LENGTH } from '../types';
+import { MIN_TITLE_LENGTH, MAX_TITLE_LENGTH, MAX_CONTENT_LENGTH } from '../types/feed';
 import './CreatePostForm.css';
 
 interface Props {
@@ -69,7 +69,7 @@ export function CreatePostForm({ onPostCreated }: Props) {
           onClick={() => setIsExpanded(true)}
         >
           <span className="trigger-icon">✏️</span>
-          <span>Share something with your neighbors...</span>
+          <span>Share something with the block...</span>
         </button>
       ) : (
         <form onSubmit={handleSubmit}>

@@ -121,7 +121,8 @@ pub fn create_verified_post(input: CreatePostInput) -> ExternResult<PostOutput> 
 pub fn get_all_posts(_: ()) -> ExternResult<Vec<PostOutput>> {
     let all_posts_anchor = all_posts_anchor_hash()?;
     let links = get_links(
-        GetLinksInputBuilder::try_new(all_posts_anchor, LinkTypes::AllPosts)?.build(),
+        LinkQuery::try_new(all_posts_anchor, LinkTypes::AllPosts)?,
+        GetStrategy::Local,
     )?;
     
     let mut posts = Vec::new();
@@ -159,7 +160,8 @@ pub fn get_all_posts(_: ()) -> ExternResult<Vec<PostOutput>> {
 #[hdk_extern]
 pub fn get_posts_for_agent(agent: AgentPubKey) -> ExternResult<Vec<PostOutput>> {
     let links = get_links(
-        GetLinksInputBuilder::try_new(agent, LinkTypes::AgentToPosts)?.build(),
+        LinkQuery::try_new(agent, LinkTypes::AgentToPosts)?,
+        GetStrategy::Local,
     )?;
     
     let mut posts = Vec::new();

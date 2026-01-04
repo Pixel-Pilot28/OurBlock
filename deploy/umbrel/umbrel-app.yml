@@ -1,0 +1,70 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# OurBlock - Umbrel App Manifest
+# 
+# Umbrel is a personal home server OS for self-hosting.
+# This defines OurBlock as an Umbrel Community App Store app.
+#
+# To submit to Umbrel Community App Store:
+#   1. Fork https://github.com/getumbrel/umbrel-apps
+#   2. Add this app to the apps/ directory
+#   3. Submit a pull request
+#
+# More info: https://github.com/getumbrel/umbrel-apps
+# ═══════════════════════════════════════════════════════════════════════════════
+
+manifestVersion: 1
+id: ourblock
+name: OurBlock
+tagline: Decentralized Neighborhood Community
+icon: https://raw.githubusercontent.com/ourblock/ourblock/main/assets/icon.svg
+category: social
+version: "1.0.0"
+port: 3000
+description: >-
+  OurBlock is a decentralized neighborhood community platform built on Holochain.
+  Connect with your neighbors, share tools, help each other, and build community trust
+  - all without relying on big tech companies.
+  
+  
+  Features include:
+  
+  • Neighbor Profiles - Know who lives nearby
+  
+  • Web of Trust - Vouch for trusted neighbors
+  
+  • Community Feed - Share updates and announcements
+  
+  • Tool Shed - Borrow and lend tools (Library of Things)
+  
+  • Helping Hands - Request and offer mutual aid
+  
+  • Ephemeral Chat - Private, disappearing messages
+  
+  
+  Your neighborhood data stays in your neighborhood. No central servers,
+  no data harvesting, no algorithms - just community.
+
+developer: OurBlock Community
+website: https://ourblock.community
+submitter: OurBlock Community
+submission: https://github.com/ourblock/ourblock
+repo: https://github.com/ourblock/ourblock
+support: https://github.com/ourblock/ourblock/issues
+gallery:
+  - https://raw.githubusercontent.com/ourblock/ourblock/main/assets/screenshots/feed.png
+  - https://raw.githubusercontent.com/ourblock/ourblock/main/assets/screenshots/toolshed.png
+  - https://raw.githubusercontent.com/ourblock/ourblock/main/assets/screenshots/vouching.png
+
+releaseNotes: >-
+  Initial release of OurBlock for Umbrel!
+  
+  - Full Holochain-based decentralized backend
+  - Beautiful React UI
+  - Status dashboard for monitoring
+  - Zero-configuration mDNS discovery
+
+dependencies: []
+
+path: ""
+defaultUsername: ""
+defaultPassword: ""

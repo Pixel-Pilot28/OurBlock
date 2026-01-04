@@ -92,3 +92,26 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Clickable profile card */
+.profile-card.clickable {
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+
+.profile-card.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.profile-card.clickable:hover .edit-indicator {
+  opacity: 1;
+}
+
+.edit-indicator {
+  margin-left: auto;
+  font-size: 1.25rem;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}

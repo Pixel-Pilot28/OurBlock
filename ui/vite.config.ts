@@ -8,7 +8,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+      // Force libsodium-wrappers to use the CJS version instead of ESM
+      'libsodium-wrappers': resolve(__dirname, 'node_modules/libsodium-wrappers/dist/modules/libsodium-wrappers.js'),
     },
+  },
+  optimizeDeps: {
+    // Force these to be pre-bundled
+    include: ['@holochain/client'],
   },
   server: {
     port: 8888,
@@ -23,5 +29,10 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    target: 'esnext',
+    // Use commonjs for these packages in the build
+    commonjsOptions: {
+      include: [/libsodium/, /node_modules/],
+    },
   },
 });

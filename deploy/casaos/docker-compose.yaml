@@ -1,0 +1,124 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# OurBlock - CasaOS App Configuration
+# 
+# CasaOS is a simple, easy-to-use home cloud system.
+# This file defines OurBlock as a one-click installable app.
+#
+# Installation:
+#   1. Open CasaOS dashboard
+#   2. Go to App Store → Custom Install
+#   3. Paste this docker-compose or import from URL
+#
+# More info: https://casaos.io
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: ourblock
+services:
+  lair-keystore:
+    image: holochain/lair-keystore:0.5
+    container_name: ourblock-lair
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /DATA/AppData/ourblock/lair
+        target: /lair
+    environment:
+      - LAIR_DIR=/lair
+    networks:
+      - ourblock
+
+  conductor:
+    image: ghcr.io/ourblock/ourblock-edge-node:latest
+    container_name: ourblock-conductor
+    restart: unless-stopped
+    depends_on:
+      - lair-keystore
+    ports:
+      - target: 8888
+        published: "8888"
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: /DATA/AppData/ourblock/conductor
+        target: /data
+    environment:
+      - RUST_LOG=info
+      - LAIR_KEYSTORE_URL=lair://lair-keystore:50000
+      - NETWORK_SEED=${NETWORK_SEED:-ourblock-casaos}
+    networks:
+      - ourblock
+
+  ui:
+    image: ghcr.io/ourblock/ourblock-ui:latest
+    container_name: ourblock-ui
+    restart: unless-stopped
+    depends_on:
+      - conductor
+    ports:
+      - target: 80
+        published: "3000"
+        protocol: tcp
+    networks:
+      - ourblock
+
+  status:
+    image: ghcr.io/ourblock/ourblock-status-dashboard:latest
+    container_name: ourblock-status
+    restart: unless-stopped
+    depends_on:
+      - conductor
+    ports:
+      - target: 8080
+        published: "8080"
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: /DATA/AppData/ourblock/conductor
+        target: /data
+        read_only: true
+    environment:
+      - NEIGHBORHOOD_ID=${NETWORK_SEED:-ourblock-casaos}
+      - CONDUCTOR_URL=http://conductor:8001
+    networks:
+      - ourblock
+
+networks:
+  ourblock:
+    name: ourblock
+
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  author: OurBlock Community
+  category: Social
+  description:
+    en_us: |
+      OurBlock is a decentralized neighborhood community platform built on Holochain.
+      
+      Features:
+      - 👤 Neighbor Profiles
+      - 🤝 Web of Trust (Vouching)
+      - 📋 Community Feed
+      - 🔧 Tool Shed (Library of Things)
+      - 🙋 Helping Hands (Mutual Aid)
+      - 💬 Ephemeral Chat
+      
+      Your data stays in your neighborhood - no central servers!
+  developer: OurBlock Community
+  icon: https://raw.githubusercontent.com/ourblock/ourblock/main/assets/icon.png
+  index: /
+  main: ui
+  port_map: "3000"
+  scheme: http
+  store_app_id: ourblock
+  tagline:
+    en_us: Decentralized Neighborhood Community
+  thumbnail: https://raw.githubusercontent.com/ourblock/ourblock/main/assets/thumbnail.png
+  tips:
+    before_install:
+      en_us: |
+        Make sure you have at least 2GB of RAM available.
+        The first startup may take a few minutes to initialize.
+  title:
+    en_us: OurBlock

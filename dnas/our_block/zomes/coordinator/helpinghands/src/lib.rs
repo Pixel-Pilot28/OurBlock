@@ -106,7 +106,8 @@ pub fn create_request(input: CreateRequestInput) -> ExternResult<RequestOutput> 
 pub fn get_all_requests(_: ()) -> ExternResult<Vec<RequestOutput>> {
     let anchor = all_requests_anchor()?;
     let links = get_links(
-        GetLinksInputBuilder::try_new(anchor, LinkTypes::AllRequests)?.build(),
+        LinkQuery::try_new(anchor, LinkTypes::AllRequests)?,
+        GetStrategy::Local,
     )?;
     
     let mut requests = Vec::new();
@@ -158,7 +159,8 @@ pub fn get_my_requests(_: ()) -> ExternResult<Vec<RequestOutput>> {
     let agent = agent_info()?.agent_initial_pubkey;
     
     let links = get_links(
-        GetLinksInputBuilder::try_new(agent, LinkTypes::AgentToRequests)?.build(),
+        LinkQuery::try_new(agent, LinkTypes::AgentToRequests)?,
+        GetStrategy::Local,
     )?;
     
     let mut requests = Vec::new();
@@ -294,7 +296,8 @@ pub fn create_comment(input: CreateCommentInput) -> ExternResult<CommentOutput> 
 #[hdk_extern]
 pub fn get_comments_for_request(request_hash: ActionHash) -> ExternResult<Vec<CommentOutput>> {
     let links = get_links(
-        GetLinksInputBuilder::try_new(request_hash, LinkTypes::RequestToComments)?.build(),
+        LinkQuery::try_new(request_hash, LinkTypes::RequestToComments)?,
+        GetStrategy::Local,
     )?;
     
     let mut comments = Vec::new();
@@ -329,7 +332,8 @@ pub fn get_comments_for_request(request_hash: ActionHash) -> ExternResult<Vec<Co
 /// Helper to count comments for a request
 fn get_comment_count(request_hash: ActionHash) -> ExternResult<usize> {
     let links = get_links(
-        GetLinksInputBuilder::try_new(request_hash, LinkTypes::RequestToComments)?.build(),
+        LinkQuery::try_new(request_hash, LinkTypes::RequestToComments)?,
+        GetStrategy::Local,
     )?;
     Ok(links.len())
 }

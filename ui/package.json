@@ -10,7 +10,8 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "@holochain/client": "^0.18.0",
+    "@holochain/client": "^0.20.0",
+    "libsodium-wrappers-sumo": "^0.7.16",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useHolochain } from '../contexts/HolochainContext';
 import type { ItemOutput } from '../types';
-import { MAX_TITLE_LENGTH, MAX_DESCRIPTION_LENGTH } from '../types';
+import { normalizeItemOutput } from '../utils/itemStatus';
+import { MAX_TITLE_LENGTH, MAX_DESCRIPTION_LENGTH } from '../types/toolshed';
 import './AddItemForm.css';
 
 interface Props {
@@ -38,7 +39,7 @@ export function AddItemForm({ onItemAdded, onCancel }: Props) {
         },
       });
 
-      onItemAdded(result);
+      onItemAdded(normalizeItemOutput(result));
     } catch (err) {
       console.error('Failed to add item:', err);
       setError(err instanceof Error ? err.message : 'Failed to add item');

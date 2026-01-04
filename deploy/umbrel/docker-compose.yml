@@ -1,0 +1,57 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# OurBlock - Umbrel Docker Compose
+# ═══════════════════════════════════════════════════════════════════════════════
+
+version: "3.7"
+
+services:
+  lair:
+    image: holochain/lair-keystore:0.5
+    restart: on-failure
+    stop_grace_period: 1m
+    volumes:
+      - ${APP_DATA_DIR}/lair:/lair
+    environment:
+      - LAIR_DIR=/lair
+    networks:
+      - default
+
+  conductor:
+    image: ghcr.io/ourblock/ourblock-edge-node:latest
+    restart: on-failure
+    stop_grace_period: 1m
+    depends_on:
+      - lair
+    volumes:
+      - ${APP_DATA_DIR}/conductor:/data
+    environment:
+      - RUST_LOG=info
+      - LAIR_KEYSTORE_URL=lair://lair:50000
+      - NETWORK_SEED=ourblock-umbrel-${UMBREL_SEED:-default}
+    networks:
+      - default
+
+  ui:
+    image: ghcr.io/ourblock/ourblock-ui:latest
+    restart: on-failure
+    depends_on:
+      - conductor
+    ports:
+      - "${APP_PORT:-3000}:80"
+    networks:
+      - default
+
+  status:
+    image: ghcr.io/ourblock/ourblock-status-dashboard:latest
+    restart: on-failure
+    depends_on:
+      - conductor
+    ports:
+      - "${APP_STATUS_PORT:-8080}:8080"
+    volumes:
+      - ${APP_DATA_DIR}/conductor:/data:ro
+    environment:
+      - NEIGHBORHOOD_ID=ourblock-umbrel
+      - CONDUCTOR_URL=http://conductor:8001
+    networks:
+      - default

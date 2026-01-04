@@ -2,8 +2,9 @@
   description = "OurBlock - A decentralized neighborhood community app built on Holochain";
 
   inputs = {
+    # Use main-0.6 branch (matching scaffold configuration)
     holonix = {
-      url = "github:holochain/holonix?ref=main";
+      url = "github:holochain/holonix?ref=main-0.6";
       flake = true;
     };
     nixpkgs.follows = "holonix/nixpkgs";

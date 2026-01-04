@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useHolochain } from '../contexts/HolochainContext';
+import { ProfileEditor } from './ProfileEditor';
 import './ProfileDisplay.css';
 
 interface Profile {
   nickname: string;
   bio: string | null;
-  created_at: number;
 }
 
 interface ProfileOutput {
@@ -21,6 +21,7 @@ export function ProfileDisplay() {
   const [allProfiles, setAllProfiles] = useState<ProfileOutput[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     async function loadProfiles() {
@@ -73,12 +74,26 @@ export function ProfileDisplay() {
     );
   }
 
+  const handleProfileSaved = (updatedProfile: Profile) => {
+    if (profile) {
+      setProfile({
+        ...profile,
+        profile: updatedProfile,
+      });
+    }
+    setIsEditing(false);
+  };
+
   return (
     <div className="profile-display">
       {profile && (
         <section className="my-profile">
           <h2>Your Profile</h2>
-          <div className="profile-card">
+          <div 
+            className="profile-card clickable"
+            onClick={() => setIsEditing(true)}
+            title="Click to edit your profile"
+          >
             <div className="profile-avatar">
               {profile.profile.nickname.charAt(0).toUpperCase()}
             </div>
@@ -86,8 +101,17 @@ export function ProfileDisplay() {
               <h3>{profile.profile.nickname}</h3>
               {profile.profile.bio && <p>{profile.profile.bio}</p>}
             </div>
+            <div className="edit-indicator">✏️</div>
           </div>
         </section>
+      )}
+
+      {isEditing && profile && (
+        <ProfileEditor
+          profile={profile.profile}
+          onClose={() => setIsEditing(false)}
+          onSave={handleProfileSaved}
+        />
       )}
 
       <section className="neighbors">

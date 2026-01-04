@@ -1,0 +1,71 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# OurBlock - Home Assistant Add-on Configuration
+#
+# Home Assistant add-ons run as Docker containers managed by the Supervisor.
+# This integrates OurBlock into the Home Assistant ecosystem.
+#
+# Installation:
+#   1. Add repository: https://github.com/ourblock/ha-addon
+#   2. Install "OurBlock" from the add-on store
+#   3. Start the add-on
+#
+# More info: https://developers.home-assistant.io/docs/add-ons
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: OurBlock
+version: "1.0.0"
+slug: ourblock
+description: Decentralized neighborhood community platform
+url: https://github.com/ourblock/ourblock
+
+# Build configuration
+arch:
+  - amd64
+  - aarch64
+  - armv7
+
+# Container configuration  
+init: false
+homeassistant_api: false
+hassio_api: false
+
+# Network
+ports:
+  3000/tcp: 3000
+  8080/tcp: 8080
+  8888/tcp: 8888
+ports_description:
+  3000/tcp: OurBlock Web UI
+  8080/tcp: Status Dashboard
+  8888/tcp: Holochain WebSocket
+
+# Storage
+map:
+  - addon_config:rw
+  - share:rw
+
+# Options
+options:
+  neighborhood_id: ""
+  log_level: info
+
+schema:
+  neighborhood_id: str?
+  log_level: list(error|warn|info|debug|trace)
+
+# Resources
+startup: application
+boot: auto
+
+# Metadata
+panel_icon: mdi:home-group
+panel_title: OurBlock
+panel_admin: false
+
+# Ingress (integrate with HA sidebar)
+ingress: true
+ingress_port: 3000
+ingress_stream: false
+
+# Labels
+image: ghcr.io/ourblock/ourblock-ha-addon-{arch}

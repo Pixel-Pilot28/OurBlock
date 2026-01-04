@@ -1,0 +1,114 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# OurBlock - Local Full-Stack Testing
+# 
+# Builds and runs the actual Holochain conductor and React UI locally.
+# Use this to test the full application before deploying.
+#
+# Usage:
+#   cd deploy
+#   docker compose -f docker-compose.local.yaml up --build
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Lair Keystore - Secure key management
+  # ─────────────────────────────────────────────────────────────────────────────
+  lair:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: conductor
+    image: ourblock/conductor:local
+    container_name: ourblock-lair
+    command: >
+      sh -c "
+        if [ ! -f /data/lair-keystore/lair-keystore-config.yaml ]; then
+          echo 'Initializing Lair keystore...'
+          lair-keystore init -p /data/lair-keystore
+        fi
+        lair-keystore server -p /data/lair-keystore --piped
+      "
+    stdin_open: true
+    volumes:
+      - lair_data:/data/lair-keystore
+    networks:
+      - ourblock-network
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Holochain Conductor - Runs the OurBlock hApp
+  # ─────────────────────────────────────────────────────────────────────────────
+  conductor:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: conductor
+    image: ourblock/conductor:local
+    container_name: ourblock-conductor
+    restart: unless-stopped
+    depends_on:
+      - lair
+    environment:
+      - RUST_LOG=${RUST_LOG:-info}
+      - NETWORK_SEED=${NETWORK_SEED:-local-test-001}
+    volumes:
+      - conductor_data:/data/conductor
+      - lair_data:/data/lair-keystore:ro
+      - ../workdir/our_block.happ:/app/our_block.happ:ro
+    ports:
+      - "8888:8888"   # App WebSocket
+      - "8001:8001"   # Admin
+    networks:
+      - ourblock-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # UI - React application served via Nginx
+  # ─────────────────────────────────────────────────────────────────────────────
+  ui:
+    build:
+      context: ../ui
+      dockerfile: ../deploy/Dockerfile.ui
+    image: ourblock/ui:local
+    container_name: ourblock-ui
+    restart: unless-stopped
+    depends_on:
+      conductor:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_HC_PORT=8888
+    networks:
+      - ourblock-network
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Status Dashboard
+  # ─────────────────────────────────────────────────────────────────────────────
+  status:
+    build:
+      context: ./status-dashboard
+      dockerfile: Dockerfile
+    image: ourblock/status-dashboard:local
+    container_name: ourblock-status
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - NEIGHBORHOOD_ID=${NETWORK_SEED:-local-test-001}
+      - CONDUCTOR_URL=http://conductor:8001
+    networks:
+      - ourblock-network
+
+volumes:
+  lair_data:
+  conductor_data:
+
+networks:
+  ourblock-network:
+    driver: bridge

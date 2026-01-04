@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useHolochain } from '../contexts/HolochainContext';
 import { ItemCard } from './ItemCard';
+import { ItemEditor } from './ItemEditor';
 import type { ItemOutput, TransactionOutput, BorrowRequestOutput, ItemStatus } from '../types';
+import { normalizeItemOutput, normalizeItems } from '../utils/itemStatus';
 import './MyGarage.css';
 
 type Tab = 'my-items' | 'borrowed' | 'requests';
@@ -14,6 +16,7 @@ export function MyGarage() {
   const [myRequests, setMyRequests] = useState<BorrowRequestOutput[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<ItemOutput | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!client) return;
@@ -29,7 +32,7 @@ export function MyGarage() {
         fn_name: 'get_my_items',
         payload: null,
       });
-      setMyItems(items);
+      setMyItems(normalizeItems(items));
 
       // Fetch my transactions
       const transactions = await client.callZome({
@@ -67,11 +70,16 @@ export function MyGarage() {
     if (!client) return;
 
     try {
+      // Convert string status to tagged enum format
+      const statusPayload = typeof newStatus === 'string' ? { type: newStatus } : newStatus;
       await client.callZome({
         role_name: 'our_block',
         zome_name: 'toolshed',
         fn_name: 'update_item_status',
-        payload: [item.action_hash, newStatus],
+        payload: {
+          action_hash: item.action_hash,
+          status: statusPayload,
+        },
       });
 
       // Refresh data
@@ -79,6 +87,20 @@ export function MyGarage() {
     } catch (err) {
       console.error('Failed to update status:', err);
     }
+  };
+
+  const handleItemClick = (item: ItemOutput) => {
+    setEditingItem(item);
+  };
+
+  const handleItemSaved = (updatedItem: ItemOutput) => {
+      const normalized = normalizeItemOutput(updatedItem);
+      setMyItems(prev => prev.map(item => 
+        arrayToHex(item.action_hash) === arrayToHex(normalized.action_hash) 
+          ? normalized 
+          : item
+      ));
+    setEditingItem(null);
   };
 
   const handleReturnItem = async (transaction: TransactionOutput) => {
@@ -164,14 +186,30 @@ export function MyGarage() {
               ) : (
                 <div className="items-grid">
                   {myItems.map((item, index) => (
-                    <ItemCard 
+                    <div 
                       key={`${arrayToHex(item.action_hash)}-${index}`}
-                      item={item}
-                      showOwnerActions={true}
-                      onStatusChange={handleStatusChange}
-                    />
+                      className="item-wrapper clickable"
+                      onClick={() => handleItemClick(item)}
+                    >
+                      <ItemCard 
+                        item={item}
+                        showOwnerActions={true}
+                        onStatusChange={handleStatusChange}
+                      />
+                      <div className="edit-overlay">
+                        <span>✏️ Click to Edit</span>
+                      </div>
+                    </div>
                   ))}
                 </div>
+              )}
+
+              {editingItem && (
+                <ItemEditor
+                  item={editingItem}
+                  onClose={() => setEditingItem(null)}
+                  onSave={handleItemSaved}
+                />
               )}
             </div>
           )}

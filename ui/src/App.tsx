@@ -6,15 +6,45 @@ import { PostFeed } from './components/PostFeed';
 import { ItemGallery } from './components/ItemGallery';
 import { MyGarage } from './components/MyGarage';
 import { ChatWindow } from './components/ChatWindow';
+import { EventsFeed } from './components/EventsFeed';
+import { SharedSpaces } from './components/SharedSpaces';
+import { CommunitySwitcher, MOCK_COMMUNITIES, type Community } from './components/CommunitySwitcher';
 import { useHolochain } from './contexts/HolochainContext';
 import './App.css';
 
-type View = 'profile' | 'feed' | 'toolshed' | 'garage' | 'chat';
+type View = 'profile' | 'feed' | 'toolshed' | 'garage' | 'events' | 'spaces' | 'chat';
 
 function AppContent() {
   const { client, isConnected, error } = useHolochain();
   const [hasProfile, setHasProfile] = useState(false);
+  const [_isCheckingProfile, setIsCheckingProfile] = useState(true);
   const [currentView, setCurrentView] = useState<View>('feed');
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
+  const [currentCommunity, setCurrentCommunity] = useState<Community>(MOCK_COMMUNITIES[0]);
+
+  // Check if user already has a profile
+  useEffect(() => {
+    async function checkProfile() {
+      if (!client || !isConnected) return;
+
+      try {
+        const profile = await client.callZome({
+          role_name: 'our_block',
+          zome_name: 'profile',
+          fn_name: 'get_my_profile',
+          payload: null,
+        });
+        setHasProfile(profile !== null);
+      } catch (err) {
+        console.error('Failed to check profile:', err);
+        setHasProfile(false);
+      } finally {
+        setIsCheckingProfile(false);
+      }
+    }
+
+    checkProfile();
+  }, [client, isConnected]);
 
   if (error) {
     return (
@@ -50,9 +80,30 @@ function AppContent() {
 
   return (
     <div className="app">
+      <CommunitySwitcher 
+        isOpen={isSwitcherOpen}
+        onClose={() => setIsSwitcherOpen(false)}
+        currentCommunity={currentCommunity}
+        onCommunityChange={setCurrentCommunity}
+      />
+      
       <header className="app-header">
-        <h1>🏘️ OurBlock</h1>
-        <p className="tagline">Your Neighborhood Community</p>
+        <div className="header-top">
+          <button 
+            className="community-toggle-btn"
+            onClick={() => setIsSwitcherOpen(true)}
+            aria-label="Switch community"
+          >
+            <span className="community-emoji">{currentCommunity.emoji}</span>
+            <div className="community-name-wrapper">
+              <span className="community-name">{currentCommunity.name}</span>
+              <span className="community-subtitle">{currentCommunity.memberCount} members</span>
+            </div>
+            <span className="chevron">›</span>
+          </button>
+          <h1>🏘️ OurBlock</h1>
+        </div>
+        <p className="tagline">Your {currentCommunity.name} Community</p>
         <nav className="app-nav">
           <button 
             className={`nav-btn ${currentView === 'feed' ? 'active' : ''}`}
@@ -71,6 +122,18 @@ function AppContent() {
             onClick={() => setCurrentView('garage')}
           >
             🏠 My Garage
+          </button>
+          <button 
+            className={`nav-btn ${currentView === 'events' ? 'active' : ''}`}
+            onClick={() => setCurrentView('events')}
+          >
+            📅 Events
+          </button>
+          <button 
+            className={`nav-btn ${currentView === 'spaces' ? 'active' : ''}`}
+            onClick={() => setCurrentView('spaces')}
+          >
+            🏛️ Spaces
           </button>
           <button 
             className={`nav-btn ${currentView === 'chat' ? 'active' : ''}`}
@@ -93,6 +156,10 @@ function AppContent() {
           <ItemGallery />
         ) : currentView === 'garage' ? (
           <MyGarage />
+        ) : currentView === 'events' ? (
+          <EventsFeed />
+        ) : currentView === 'spaces' ? (
+          <SharedSpaces />
         ) : currentView === 'chat' ? (
           <ChatWindow />
         ) : !hasProfile ? (

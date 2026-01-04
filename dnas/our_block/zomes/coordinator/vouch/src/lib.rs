@@ -124,7 +124,8 @@ pub fn create_vouch(input: CreateVouchInput) -> ExternResult<VouchOutput> {
 #[hdk_extern]
 pub fn get_vouches_for(agent: AgentPubKey) -> ExternResult<Vec<VouchInfo>> {
     let links = get_links(
-        GetLinksInputBuilder::try_new(agent.clone(), LinkTypes::AgentToVouchesReceived)?.build(),
+        LinkQuery::try_new(agent.clone(), LinkTypes::AgentToVouchesReceived)?,
+        GetStrategy::Local,
     )?;
     
     let anchors = get_all_anchors(())?;
@@ -206,7 +207,8 @@ pub fn am_i_verified(_: ()) -> ExternResult<bool> {
 /// Get all vouches that an agent has given to others
 fn get_vouches_given_by(agent: AgentPubKey) -> ExternResult<Vec<VouchOutput>> {
     let links = get_links(
-        GetLinksInputBuilder::try_new(agent.clone(), LinkTypes::AgentToVouchesGiven)?.build(),
+        LinkQuery::try_new(agent.clone(), LinkTypes::AgentToVouchesGiven)?,
+        GetStrategy::Local,
     )?;
     
     let mut vouches = Vec::new();
@@ -395,7 +397,8 @@ pub fn designate_anchor(new_anchor_agent: AgentPubKey) -> ExternResult<TrustedAn
 pub fn get_all_anchors(_: ()) -> ExternResult<Vec<TrustedAnchor>> {
     let anchor_path = anchor_path_hash()?;
     let links = get_links(
-        GetLinksInputBuilder::try_new(anchor_path, LinkTypes::AllAnchors)?.build(),
+        LinkQuery::try_new(anchor_path, LinkTypes::AllAnchors)?,
+        GetStrategy::Local,
     )?;
     
     let mut anchors = Vec::new();

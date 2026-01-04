@@ -10,4 +10,5 @@ name = "feed"
 [dependencies]
 hdk = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+holochain_serialized_bytes = { workspace = true }
 feed_integrity = { path = "../../integrity/feed" }

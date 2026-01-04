@@ -121,7 +121,8 @@ pub fn create_item(input: CreateItemInput) -> ExternResult<ItemOutput> {
 pub fn get_all_items(_: ()) -> ExternResult<Vec<ItemOutput>> {
     let all_items_anchor = all_items_anchor_hash()?;
     let links = get_links(
-        GetLinksInputBuilder::try_new(all_items_anchor, LinkTypes::AllItems)?.build(),
+        LinkQuery::try_new(all_items_anchor, LinkTypes::AllItems)?,
+        GetStrategy::Local,
     )?;
     
     let mut items = Vec::new();
@@ -161,7 +162,8 @@ pub fn get_my_items(_: ()) -> ExternResult<Vec<ItemOutput>> {
 #[hdk_extern]
 pub fn get_items_for_owner(owner: AgentPubKey) -> ExternResult<Vec<ItemOutput>> {
     let links = get_links(
-        GetLinksInputBuilder::try_new(owner, LinkTypes::AgentToItems)?.build(),
+        LinkQuery::try_new(owner, LinkTypes::AgentToItems)?,
+        GetStrategy::Local,
     )?;
     
     let mut items = Vec::new();
@@ -214,13 +216,19 @@ pub fn get_item(action_hash: ActionHash) -> ExternResult<Option<ItemOutput>> {
     }))
 }
 
+/// Input for updating item status
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct UpdateStatusInput {
+    pub action_hash: ActionHash,
+    pub status: ItemStatus,
+}
+
 /// Update item status (owner only)
 #[hdk_extern]
-pub fn update_item_status(input: (ActionHash, ItemStatus)) -> ExternResult<ItemOutput> {
-    let (action_hash, new_status) = input;
+pub fn update_item_status(input: UpdateStatusInput) -> ExternResult<ItemOutput> {
     let agent = agent_info()?.agent_initial_pubkey;
     
-    let Some(record) = get(action_hash.clone(), GetOptions::default())? else {
+    let Some(record) = get(input.action_hash.clone(), GetOptions::default())? else {
         return Err(wasm_error!(WasmErrorInner::Guest("Item not found".to_string())));
     };
     
@@ -239,9 +247,54 @@ pub fn update_item_status(input: (ActionHash, ItemStatus)) -> ExternResult<ItemO
         )));
     }
     
-    item.status = new_status;
+    item.status = input.status;
     
-    let new_action_hash = update_entry(action_hash, &item)?;
+    let new_action_hash = update_entry(input.action_hash, &item)?;
+    let entry_hash = hash_entry(&item)?;
+    
+    Ok(ItemOutput {
+        item,
+        action_hash: new_action_hash,
+        entry_hash,
+    })
+}
+
+/// Input for updating an item
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct UpdateItemInput {
+    pub action_hash: ActionHash,
+    pub title: String,
+    pub description: String,
+}
+
+/// Update item details (owner only)
+#[hdk_extern]
+pub fn update_item(input: UpdateItemInput) -> ExternResult<ItemOutput> {
+    let agent = agent_info()?.agent_initial_pubkey;
+    
+    let Some(record) = get(input.action_hash.clone(), GetOptions::default())? else {
+        return Err(wasm_error!(WasmErrorInner::Guest("Item not found".to_string())));
+    };
+    
+    let Some(mut item) = record
+        .entry()
+        .to_app_option::<Item>()
+        .map_err(|e| wasm_error!(WasmErrorInner::Guest(e.to_string())))?
+    else {
+        return Err(wasm_error!(WasmErrorInner::Guest("Invalid item entry".to_string())));
+    };
+    
+    // Verify ownership
+    if item.owner != agent {
+        return Err(wasm_error!(WasmErrorInner::Guest(
+            "Only the owner can update item details".to_string()
+        )));
+    }
+    
+    item.title = input.title;
+    item.description = input.description;
+    
+    let new_action_hash = update_entry(input.action_hash, &item)?;
     let entry_hash = hash_entry(&item)?;
     
     Ok(ItemOutput {
@@ -320,7 +373,8 @@ pub fn request_borrow(input: RequestBorrowInput) -> ExternResult<BorrowRequestOu
 #[hdk_extern]
 pub fn get_borrow_requests_for_item(item_hash: ActionHash) -> ExternResult<Vec<BorrowRequestOutput>> {
     let links = get_links(
-        GetLinksInputBuilder::try_new(item_hash, LinkTypes::ItemToBorrowRequests)?.build(),
+        LinkQuery::try_new(item_hash, LinkTypes::ItemToBorrowRequests)?,
+        GetStrategy::Local,
     )?;
     
     let mut requests = Vec::new();
@@ -355,7 +409,8 @@ pub fn get_my_borrow_requests(_: ()) -> ExternResult<Vec<BorrowRequestOutput>> {
     let agent = agent_info()?.agent_initial_pubkey;
     
     let links = get_links(
-        GetLinksInputBuilder::try_new(agent, LinkTypes::AgentToBorrowRequests)?.build(),
+        LinkQuery::try_new(agent, LinkTypes::AgentToBorrowRequests)?,
+        GetStrategy::Local,
     )?;
     
     let mut requests = Vec::new();
@@ -478,16 +533,20 @@ pub fn accept_borrow(input: AcceptBorrowInput) -> ExternResult<TransactionOutput
     )?;
     
     // Update item status to Borrowed
-    update_item_status((item_output.action_hash, ItemStatus::Borrowed))?;
+    update_item_status(UpdateStatusInput {
+        action_hash: item_output.action_hash,
+        status: ItemStatus::Borrowed,
+    })?;
     
     // Delete the borrow request link (request is now fulfilled)
     let request_links = get_links(
-        GetLinksInputBuilder::try_new(request.item_hash.clone(), LinkTypes::ItemToBorrowRequests)?.build(),
+        LinkQuery::try_new(request.item_hash.clone(), LinkTypes::ItemToBorrowRequests)?,
+        GetStrategy::Local,
     )?;
     
     for link in request_links {
         if ActionHash::try_from(link.target.clone()).ok() == Some(input.request_hash.clone()) {
-            delete_link(link.create_link_hash)?;
+            delete_link(link.create_link_hash, GetOptions::default())?;
         }
     }
     
@@ -530,7 +589,10 @@ pub fn return_item(transaction_hash: ActionHash) -> ExternResult<TransactionOutp
     
     // Update item status back to Available
     if let Some(item_output) = get_item(transaction.item_hash.clone())? {
-        update_item_status((item_output.action_hash, ItemStatus::Available))?;
+        update_item_status(UpdateStatusInput {
+            action_hash: item_output.action_hash,
+            status: ItemStatus::Available,
+        })?;
     }
     
     // Create updated transaction record
@@ -558,7 +620,8 @@ pub fn get_my_transactions(_: ()) -> ExternResult<Vec<TransactionOutput>> {
     let agent = agent_info()?.agent_initial_pubkey;
     
     let links = get_links(
-        GetLinksInputBuilder::try_new(agent, LinkTypes::AgentToTransactions)?.build(),
+        LinkQuery::try_new(agent, LinkTypes::AgentToTransactions)?,
+        GetStrategy::Local,
     )?;
     
     let mut transactions = Vec::new();

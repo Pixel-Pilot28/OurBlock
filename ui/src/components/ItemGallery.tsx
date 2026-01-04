@@ -2,20 +2,19 @@ import { useState, useEffect, useCallback } from 'react';
 import { useHolochain } from '../contexts/HolochainContext';
 import { ItemCard } from './ItemCard';
 import { AddItemForm } from './AddItemForm';
+import { BorrowRequestModal } from './BorrowRequestModal';
 import type { ItemOutput } from '../types';
+import { normalizeItemOutput, normalizeItems } from '../utils/itemStatus';
 import './ItemGallery.css';
 
-interface Props {
-  onBorrowRequest?: (item: ItemOutput) => void;
-}
-
-export function ItemGallery({ onBorrowRequest }: Props) {
+export function ItemGallery() {
   const { client, isConnected } = useHolochain();
   const [items, setItems] = useState<ItemOutput[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [filter, setFilter] = useState<'all' | 'available'>('all');
+  const [borrowingItem, setBorrowingItem] = useState<ItemOutput | null>(null);
 
   const fetchItems = useCallback(async () => {
     if (!client) return;
@@ -28,7 +27,7 @@ export function ItemGallery({ onBorrowRequest }: Props) {
         payload: null,
       });
 
-      setItems(result);
+      setItems(normalizeItems(result));
       setError(null);
     } catch (err) {
       console.error('Failed to fetch items:', err);
@@ -45,14 +44,17 @@ export function ItemGallery({ onBorrowRequest }: Props) {
   }, [isConnected, fetchItems]);
 
   const handleItemAdded = (newItem: ItemOutput) => {
-    setItems((prev) => [newItem, ...prev]);
+    setItems((prev) => [normalizeItemOutput(newItem), ...prev]);
     setShowAddForm(false);
   };
 
   const handleBorrowRequest = (item: ItemOutput) => {
-    if (onBorrowRequest) {
-      onBorrowRequest(item);
-    }
+    setBorrowingItem(item);
+  };
+
+  const handleBorrowSuccess = () => {
+    setBorrowingItem(null);
+    // Optionally show a success message or refresh data
   };
 
   const filteredItems = filter === 'available' 
@@ -122,13 +124,13 @@ export function ItemGallery({ onBorrowRequest }: Props) {
       ) : filteredItems.length === 0 ? (
         <div className="gallery-empty">
           <div className="empty-icon">🧰</div>
-          <h3>No items yet</h3>
-          <p>Be the first to share something with your neighbors!</p>
+          <h3>The Tool Shed is empty!</h3>
+          <p>Be the first to list a lawn mower or a ladder to help your neighbors. Every shared tool strengthens our community!</p>
           <button 
             className="add-first-item-btn"
             onClick={() => setShowAddForm(true)}
           >
-            Add Your First Item
+            ➕ Share Your First Item
           </button>
         </div>
       ) : (
@@ -141,6 +143,14 @@ export function ItemGallery({ onBorrowRequest }: Props) {
             />
           ))}
         </div>
+      )}
+
+      {borrowingItem && (
+        <BorrowRequestModal
+          item={borrowingItem}
+          onClose={() => setBorrowingItem(null)}
+          onSuccess={handleBorrowSuccess}
+        />
       )}
     </div>
   );

@@ -2,6 +2,18 @@
 
 Deploy OurBlock as a "Neighborhood Anchor" - a 24/7 edge node that holds data for your community even when individual devices are offline.
 
+## ⚡ One-Click Installation
+
+| Platform | Installation Method |
+|----------|---------------------|
+| **Any Linux** | `curl -fsSL https://ourblock.community/install.sh \| bash` |
+| **Raspberry Pi** | `curl -fsSL https://ourblock.community/raspi.sh \| bash` |
+| **Docker** | `docker compose up -d` |
+| **CasaOS** | See [deploy/casaos/](casaos/) - Import as custom app |
+| **Umbrel** | See [deploy/umbrel/](umbrel/) - Community app store |
+| **Home Assistant** | See [deploy/homeassistant/](homeassistant/) - Add-on repository |
+| **Proxmox** | See [deploy/proxmox/](proxmox/) - LXC container script |
+
 ## 🏗️ Architecture
 
 ```

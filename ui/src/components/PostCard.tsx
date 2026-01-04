@@ -1,4 +1,6 @@
-import type { PostOutput } from '../types';
+import { useState, useEffect } from 'react';
+import { useHolochain } from '../contexts/HolochainContext';
+import type { PostOutput, Profile } from '../types';
 import './PostCard.css';
 
 interface Props {
@@ -6,17 +8,49 @@ interface Props {
 }
 
 export function PostCard({ post }: Props) {
+  const { client } = useHolochain();
   const { title, content, author, created_at } = post.post;
+  const [authorProfile, setAuthorProfile] = useState<Profile | null>(null);
+
+  // Fetch the author's profile
+  useEffect(() => {
+    async function fetchAuthorProfile() {
+      if (!client) return;
+
+      try {
+        const result = await client.callZome({
+          role_name: 'our_block',
+          zome_name: 'profile',
+          fn_name: 'get_agent_profile',
+          payload: author,
+        });
+        
+        if (result) {
+          setAuthorProfile(result.profile);
+        }
+      } catch (err) {
+        // Profile might not exist, that's ok
+        console.debug('Could not fetch profile for author:', err);
+      }
+    }
+
+    fetchAuthorProfile();
+  }, [client, author]);
+
+  const displayName = authorProfile?.nickname || shortenAgentKey(author);
+  const avatarInitial = authorProfile?.nickname 
+    ? authorProfile.nickname.charAt(0).toUpperCase()
+    : getAuthorInitial(author);
 
   return (
     <article className="post-card">
       <header className="post-header">
         <div className="post-author">
           <div className="author-avatar">
-            {getAuthorInitial(author)}
+            {avatarInitial}
           </div>
           <div className="author-info">
-            <span className="author-name">{shortenAgentKey(author)}</span>
+            <span className="author-name">{displayName}</span>
             <time className="post-time">{formatTimestamp(created_at)}</time>
           </div>
         </div>

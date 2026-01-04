@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import type { ItemOutput, ItemStatus } from '../types';
+import { useState, useEffect } from 'react';
+import { useHolochain } from '../contexts/HolochainContext';
+import type { ItemOutput, ItemStatus, Profile } from '../types';
+import { normalizeItemStatus } from '../utils/itemStatus';
 import './ItemCard.css';
 
 interface Props {
@@ -15,10 +17,42 @@ export function ItemCard({
   showOwnerActions = false,
   onStatusChange 
 }: Props) {
+  const { client, agentKey } = useHolochain();
   const { title, description, status, owner, created_at } = item.item;
   const [isRequesting, setIsRequesting] = useState(false);
+  const [ownerProfile, setOwnerProfile] = useState<Profile | null>(null);
 
-  const isAvailable = status === 'Available';
+  // Check if current user is the owner
+  const isOwner = agentKey && arrayToHex(owner) === arrayToHex(agentKey);
+
+  // Fetch the owner's profile
+  useEffect(() => {
+    async function fetchOwnerProfile() {
+      if (!client) return;
+
+      try {
+        const result = await client.callZome({
+          role_name: 'our_block',
+          zome_name: 'profile',
+          fn_name: 'get_agent_profile',
+          payload: owner,
+        });
+        
+        if (result) {
+          setOwnerProfile(result.profile);
+        }
+      } catch (err) {
+        console.debug('Could not fetch profile for owner:', err);
+      }
+    }
+
+    fetchOwnerProfile();
+  }, [client, owner]);
+
+  const ownerDisplayName = ownerProfile?.nickname || shortenAgentKey(owner);
+
+  const normalizedStatus = normalizeItemStatus(status);
+  const isAvailable = normalizedStatus === 'Available';
 
   const handleBorrowClick = async () => {
     if (!onBorrowRequest || !isAvailable) return;
@@ -32,7 +66,7 @@ export function ItemCard({
   };
 
   const getStatusBadge = () => {
-    switch (status) {
+    switch (normalizedStatus) {
       case 'Available':
         return <span className="status-badge available">Available</span>;
       case 'Borrowed':
@@ -73,7 +107,7 @@ export function ItemCard({
         
         <div className="item-meta">
           <span className="item-owner">
-            👤 {shortenAgentKey(owner)}
+            👤 {ownerDisplayName}
           </span>
           <span className="item-date">
             Listed {formatTimestamp(created_at)}
@@ -91,6 +125,10 @@ export function ItemCard({
               {isAvailable ? '🔒 Mark Unavailable' : '🔓 Mark Available'}
             </button>
           </div>
+        ) : isOwner ? (
+          <div className="owner-badge">
+            <span>📦 Your Item</span>
+          </div>
         ) : (
           <button 
             className={`borrow-btn ${!isAvailable ? 'disabled' : ''}`}
@@ -103,6 +141,12 @@ export function ItemCard({
       </div>
     </article>
   );
+}
+
+function arrayToHex(arr: Uint8Array): string {
+  return Array.from(arr)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 function shortenAgentKey(key: Uint8Array): string {

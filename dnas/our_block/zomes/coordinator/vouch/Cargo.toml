@@ -10,4 +10,5 @@ name = "vouch"
 [dependencies]
 hdk = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+holochain_serialized_bytes = { workspace = true }
 vouch_integrity = { path = "../../integrity/vouch" }

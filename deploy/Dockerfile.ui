@@ -1,0 +1,46 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# OurBlock UI Docker Image
+# Serves the React frontend via nginx
+# ═══════════════════════════════════════════════════════════════════════════════
+
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files (context is the ui directory)
+COPY package.json package-lock.json* pnpm-lock.yaml* ./
+
+# Install dependencies (try npm first, fall back options)
+RUN if [ -f pnpm-lock.yaml ]; then \
+      npm install -g pnpm && pnpm install --frozen-lockfile; \
+    elif [ -f package-lock.json ]; then \
+      npm ci; \
+    else \
+      npm install; \
+    fi
+
+# Copy source and build
+COPY . .
+RUN npm run build
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Production Image
+# ═══════════════════════════════════════════════════════════════════════════════
+FROM nginx:alpine
+
+LABEL org.opencontainers.image.title="OurBlock UI"
+LABEL org.opencontainers.image.description="Web interface for OurBlock neighborhood community"
+
+# Copy nginx configuration  
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy built UI
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s \
+    CMD wget -q --spider http://localhost/health || exit 1
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

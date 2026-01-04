@@ -92,11 +92,12 @@ pub fn update_profile(input: CreateProfileInput) -> ExternResult<ProfileOutput> 
 
     // Delete old link and create new one
     let links = get_links(
-        GetLinksInputBuilder::try_new(agent.clone(), LinkTypes::AgentToProfile)?.build(),
+        LinkQuery::try_new(agent.clone(), LinkTypes::AgentToProfile)?,
+        GetStrategy::Local,
     )?;
     
     for link in links {
-        delete_link(link.create_link_hash)?;
+        delete_link(link.create_link_hash, GetOptions::default())?;
     }
 
     create_link(
@@ -130,7 +131,8 @@ pub fn get_agent_profile(agent: AgentPubKey) -> ExternResult<Option<ProfileOutpu
 /// Internal helper to get a profile for an agent
 fn get_profile_for_agent(agent: AgentPubKey) -> ExternResult<Option<ProfileOutput>> {
     let links = get_links(
-        GetLinksInputBuilder::try_new(agent.clone(), LinkTypes::AgentToProfile)?.build(),
+        LinkQuery::try_new(agent.clone(), LinkTypes::AgentToProfile)?,
+        GetStrategy::Local,
     )?;
 
     let Some(link) = links.into_iter().next() else {
@@ -165,7 +167,8 @@ fn get_profile_for_agent(agent: AgentPubKey) -> ExternResult<Option<ProfileOutpu
 pub fn get_all_profiles(_: ()) -> ExternResult<Vec<ProfileOutput>> {
     let anchor_hash = anchor_hash()?;
     let links = get_links(
-        GetLinksInputBuilder::try_new(anchor_hash, LinkTypes::AllProfiles)?.build(),
+        LinkQuery::try_new(anchor_hash, LinkTypes::AllProfiles)?,
+        GetStrategy::Local,
     )?;
 
     let mut profiles = Vec::new();

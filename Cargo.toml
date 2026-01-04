@@ -16,11 +16,11 @@ members = [
 ]
 
 [workspace.dependencies]
-# Holochain dependencies - compatible with Holochain 0.7.x
-hdi = { version = "0.6", features = ["unstable-functions"] }
-hdk = { version = "0.5", features = ["unstable-functions"] }
-holochain_serialized_bytes = "0.0.56"
-serde = "1"
+# Holochain dependencies - matching scaffold (main-0.6 branch)
+hdi = "=0.7.0"
+hdk = "=0.6.0"
+serde = "1.0"
+holochain_serialized_bytes = "*"
 
 [profile.dev]
 opt-level = "z"

@@ -156,7 +156,8 @@ pub fn announce_offline(agents: Vec<AgentPubKey>) -> ExternResult<()> {
 pub fn get_online_agents(_: ()) -> ExternResult<Vec<AgentPubKey>> {
     let anchor = online_agents_anchor()?;
     let links = get_links(
-        GetLinksInputBuilder::try_new(anchor, LinkTypes::OnlineAgents)?.build(),
+        LinkQuery::try_new(anchor, LinkTypes::OnlineAgents)?,
+        GetStrategy::Local,
     )?;
     
     let agents: Vec<AgentPubKey> = links
