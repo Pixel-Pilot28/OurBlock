@@ -25,8 +25,8 @@ RUN git clone --depth 1 https://github.com/Pixel-Pilot28/OurBlock /tmp/ourblock 
   && rm -rf /tmp/ourblock
 
 # Copy Home Assistant integration scripts
-COPY ourblock-hub/run.sh /app/run.sh
-COPY ourblock-hub/discover.sh /app/discover.sh
+COPY run.sh /app/run.sh
+COPY discover.sh /app/discover.sh
 
 # Make scripts executable
 RUN chmod +x /app/run.sh /app/discover.sh
