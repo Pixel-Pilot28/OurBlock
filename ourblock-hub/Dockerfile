@@ -1,41 +1,44 @@
-# OurBlock Hub - Home Assistant Add-on Dockerfile
-ARG BUILD_FROM
-FROM $BUILD_FROM
+# Stage 1: Build UI
+FROM node:20-slim AS ui-builder
+WORKDIR /app/ui
+COPY ui/package.json ui/pnpm-lock.yaml* ./
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
+COPY ui/ ./
+RUN pnpm build
 
-# Install system dependencies
-RUN apk add --no-cache \
-    docker-cli \
-    docker-cli-compose \
-  docker \
-  iptables \
-    avahi-dev \
-    avahi-tools \
-    dbus \
+# Stage 2: Get Holochain Binaries
+# Use the same base image as the original deployment to ensure binary compatibility
+FROM holochain/edge-node:v0.6 AS hc-bin
+
+# Stage 3: Runtime
+FROM ghcr.io/home-assistant/amd64-base-debian:bookworm
+
+# Install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     nginx \
+    gettext-base \
     openssl \
-  git \
-  bash \
-  jq
+    ca-certificates \
+    curl \
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
-WORKDIR /app
+# Copy Binaries
+COPY --from=hc-bin /usr/bin/holochain /usr/bin/holochain
+COPY --from=hc-bin /usr/bin/hc /usr/bin/hc
+COPY --from=hc-bin /usr/bin/lair-keystore /usr/bin/lair-keystore
 
-# Fetch repo assets needed for compose + infra
-RUN git clone --depth 1 https://github.com/Pixel-Pilot28/OurBlock /app/ourblock
+# Prepare Directories
+COPY rootfs/ /
 
-# Copy Home Assistant integration scripts
-COPY run.sh /app/run.sh
-COPY discover.sh /app/discover.sh
+# Copy UI
+COPY --from=ui-builder /app/ui/dist /www
 
-# Make scripts executable
-RUN chmod +x /app/run.sh /app/discover.sh
+# Copy App Data
+COPY happ/our_block.happ /usr/local/share/our_block.happ
+COPY templates/conductor-config.yaml /templates/conductor-config.yaml
 
-# Expose ports (when using host network mode, these are informational)
-EXPOSE 4443 8888
+# S6 Setup
+RUN chmod +x /etc/services.d/*/run /etc/cont-init.d/*
 
-# Health check (check if docker compose is running)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-  CMD docker compose ps 2>/dev/null | grep -q "Up" || exit 1
-
-# Run the startup script (s6-overlay will handle this)
-CMD ["/app/run.sh"]
+CMD []

@@ -1,0 +1,172 @@
+.profile-editor-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.profile-editor {
+  background: var(--bg-primary, white);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.profile-editor .editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color, #dee2e6);
+}
+
+.profile-editor .editor-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.profile-editor .close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  color: var(--text-muted, #6c757d);
+}
+
+.profile-editor .close-btn:hover {
+  color: var(--text-primary, #333);
+}
+
+.profile-editor .editor-content {
+  padding: 1.5rem;
+}
+
+.avatar-preview {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.avatar-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary, #007bff), var(--color-secondary, #6c757d));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 600;
+}
+
+.profile-editor .form-group {
+  margin-bottom: 1rem;
+}
+
+.profile-editor .form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.profile-editor .form-group input,
+.profile-editor .form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color, #dee2e6);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.profile-editor .form-group input:focus,
+.profile-editor .form-group textarea:focus {
+  outline: none;
+  border-color: var(--color-primary, #007bff);
+}
+
+.profile-editor .form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.profile-editor .char-count {
+  display: block;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--text-muted, #6c757d);
+  margin-top: 0.25rem;
+}
+
+.profile-editor .field-hint {
+  font-size: 0.8125rem;
+  color: var(--text-muted, #6c757d);
+  font-style: italic;
+  margin-top: 0.25rem;
+}
+
+.profile-editor .editor-error {
+  background: var(--color-danger-light, #ffebee);
+  color: var(--color-danger, #dc3545);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.profile-editor .editor-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-top: 1px solid var(--border-color, #dee2e6);
+  background: var(--bg-secondary, #f8f9fa);
+}
+
+.profile-editor .cancel-btn {
+  background: none;
+  border: 1px solid var(--border-color, #dee2e6);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.profile-editor .cancel-btn:hover {
+  background: var(--bg-tertiary, #e9ecef);
+}
+
+.profile-editor .save-btn {
+  background: var(--color-primary, #007bff);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.profile-editor .save-btn:hover:not(:disabled) {
+  background: var(--color-primary-dark, #0056b3);
+}
+
+.profile-editor .save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
