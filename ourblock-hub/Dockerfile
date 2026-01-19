@@ -7,8 +7,8 @@ COPY ui/ ./
 RUN pnpm build
 
 # Stage 2: Get Holochain Binaries
-# Use the same base image as the original deployment to ensure binary compatibility
-FROM holochain/edge-node:v0.6 AS hc-bin
+# Using official public Holochain image
+FROM holochain/holochain:0.3.2 AS hc-bin
 
 # Stage 3: Runtime
 FROM ghcr.io/home-assistant/amd64-base-debian:bookworm
