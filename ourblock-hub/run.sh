@@ -3,16 +3,20 @@
 
 set -e
 
+ts() {
+  date "+%Y-%m-%d %H:%M:%S"
+}
+
 log_info() {
-  echo "[info] $*"
+  echo "[$(ts)] [info] $*"
 }
 
 log_warn() {
-  echo "[warn] $*"
+  echo "[$(ts)] [warn] $*"
 }
 
 log_error() {
-  echo "[error] $*"
+  echo "[$(ts)] [error] $*"
 }
 
 config_get() {
@@ -65,7 +69,7 @@ log_info "Configuration created for neighborhood: ${NEIGHBORHOOD_NAME}"
 log_info "Starting mDNS discovery service..."
 /app/discover.sh &
 
-# Configure Docker socket from Home Assistant
+# Configure Docker access
 DOCKER_SOCK=""
 if [ -S /var/run/docker.sock ]; then
   DOCKER_SOCK="/var/run/docker.sock"
@@ -73,22 +77,23 @@ elif [ -S /run/docker.sock ]; then
   DOCKER_SOCK="/run/docker.sock"
 fi
 
-if [ -z "$DOCKER_SOCK" ]; then
-  log_error "Docker socket not found."
-  log_error "Listing /var/run and /run for diagnostics:"
-  ls -la /var/run || true
-  ls -la /run || true
-  exit 1
+if [ -n "$DOCKER_SOCK" ]; then
+  log_info "Using Docker socket: ${DOCKER_SOCK}"
+  ls -la "${DOCKER_SOCK}" || true
+  export DOCKER_HOST="unix://${DOCKER_SOCK}"
+else
+  log_warn "Docker socket not found. Trying supervisor Docker proxy..."
+  export DOCKER_HOST="tcp://supervisor:2375"
+  export DOCKER_TLS_VERIFY=0
 fi
-
-log_info "Using Docker socket: ${DOCKER_SOCK}"
-ls -la "${DOCKER_SOCK}" || true
-export DOCKER_HOST="unix://${DOCKER_SOCK}"
 
 # Wait for Docker daemon to be ready
 log_info "Waiting for Docker daemon..."
 timeout 30 sh -c 'until docker info > /dev/null 2>&1; do sleep 1; done' || {
-  log_error "Docker daemon not accessible. Check add-on configuration."
+  log_error "Docker daemon not accessible."
+  log_error "Listing /var/run and /run for diagnostics:"
+  ls -la /var/run || true
+  ls -la /run || true
   exit 1
 }
 

@@ -3,8 +3,12 @@
 
 set -e
 
+ts() {
+  date "+%Y-%m-%d %H:%M:%S"
+}
+
 log_info() {
-  echo "[info] $*"
+  echo "[$(ts)] [info] $*"
 }
 
 log_info "Starting mDNS broadcast for ourblock.local..."
