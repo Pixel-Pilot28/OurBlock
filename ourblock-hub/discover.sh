@@ -10,7 +10,8 @@ log_info() {
 log_info "Starting mDNS broadcast for ourblock.local..."
 
 # Start Avahi daemon (mDNS/Bonjour implementation)
-dbus-daemon --system
+mkdir -p /run/dbus
+dbus-daemon --system --fork || true
 avahi-daemon --daemonize
 
 # Create service definition for OurBlock

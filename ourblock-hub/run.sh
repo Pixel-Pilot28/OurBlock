@@ -66,7 +66,24 @@ log_info "Starting mDNS discovery service..."
 /app/discover.sh &
 
 # Configure Docker socket from Home Assistant
-export DOCKER_HOST="unix:///var/run/docker.sock"
+DOCKER_SOCK=""
+if [ -S /var/run/docker.sock ]; then
+  DOCKER_SOCK="/var/run/docker.sock"
+elif [ -S /run/docker.sock ]; then
+  DOCKER_SOCK="/run/docker.sock"
+fi
+
+if [ -z "$DOCKER_SOCK" ]; then
+  log_error "Docker socket not found."
+  log_error "Listing /var/run and /run for diagnostics:"
+  ls -la /var/run || true
+  ls -la /run || true
+  exit 1
+fi
+
+log_info "Using Docker socket: ${DOCKER_SOCK}"
+ls -la "${DOCKER_SOCK}" || true
+export DOCKER_HOST="unix://${DOCKER_SOCK}"
 
 # Wait for Docker daemon to be ready
 log_info "Waiting for Docker daemon..."
