@@ -16,7 +16,7 @@ name: OurBlock
 version: "1.0.0"
 slug: ourblock
 description: Decentralized neighborhood community platform
-url: https://github.com/ourblock/ourblock
+url: https://github.com/Pixel-Pilot28/OurBlock
 
 # Build configuration
 arch:
@@ -67,5 +67,3 @@ ingress: true
 ingress_port: 3000
 ingress_stream: false
 
-# Labels
-image: ghcr.io/ourblock/ourblock-ha-addon-{arch}
