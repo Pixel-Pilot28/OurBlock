@@ -1,7 +1,12 @@
-#!/usr/bin/with-contenv bashio
+#!/usr/bin/env bashio
 # mDNS Discovery Service - Announces OurBlock Hub on local network
 
 set -e
+
+# Source bashio library
+if [ -f /usr/lib/bashio/bashio.sh ]; then
+    source /usr/lib/bashio/bashio.sh
+fi
 
 bashio::log.info "Starting mDNS broadcast for ourblock.local..."
 

@@ -1,7 +1,12 @@
-#!/usr/bin/with-contenv bashio
+#!/usr/bin/env bashio
 # OurBlock Hub - Home Assistant Add-on Startup Script
 
 set -e
+
+# Source bashio library
+if [ -f /usr/lib/bashio/bashio.sh ]; then
+    source /usr/lib/bashio/bashio.sh
+fi
 
 bashio::log.info "Starting OurBlock Hub..."
 
