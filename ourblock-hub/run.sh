@@ -1,44 +1,23 @@
-#!/usr/bin/with-contenv bash
+#!/bin/bash
 # OurBlock Hub - Home Assistant Add-on Startup Script
 
 set -e
 
-HAS_BASHIO=0
-if [ -f /usr/lib/bashio/bashio.sh ]; then
-  # shellcheck disable=SC1091
-  source /usr/lib/bashio/bashio.sh
-  HAS_BASHIO=1
-fi
-
 log_info() {
-  if [ "$HAS_BASHIO" -eq 1 ]; then
-    bashio::log.info "$*"
-  else
-    echo "[info] $*"
-  fi
+  echo "[info] $*"
 }
 
 log_warn() {
-  if [ "$HAS_BASHIO" -eq 1 ]; then
-    bashio::log.warning "$*"
-  else
-    echo "[warn] $*"
-  fi
+  echo "[warn] $*"
 }
 
 log_error() {
-  if [ "$HAS_BASHIO" -eq 1 ]; then
-    bashio::log.error "$*"
-  else
-    echo "[error] $*"
-  fi
+  echo "[error] $*"
 }
 
 config_get() {
   local key="$1"
-  if [ "$HAS_BASHIO" -eq 1 ]; then
-    bashio::config "$key"
-  elif [ -f /data/options.json ]; then
+  if [ -f /data/options.json ]; then
     jq -r --arg k "$key" '.[$k] // empty' /data/options.json
   else
     echo ""
