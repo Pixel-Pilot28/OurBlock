@@ -22,7 +22,7 @@
 1. Navigate to **Settings** → **Add-ons** → **Add-on Store**
 2. Click the **⋮** menu (top right)
 3. Select **Repositories**
-4. Add repository URL: `https://github.com/yourusername/ourblock`
+4. Add repository URL: `https://github.com/Pixel-Pilot28/OurBlock`
 5. Click **Add**
 6. Refresh the page
 7. Find **OurBlock Hub** in the local add-ons section
@@ -40,11 +40,11 @@ ssh root@homeassistant.local
 cd /addons
 
 # Clone the repository
-git clone https://github.com/yourusername/ourblock
-cd ourblock
+git clone https://github.com/Pixel-Pilot28/OurBlock
+cd OurBlock
 
 # Install from local
-ha addons install --repository /addons/ourblock --addon ourblock-hub
+ha addons install --repository /addons/OurBlock --addon ourblock-hub
 
 # Start the add-on
 ha addons start ourblock-hub

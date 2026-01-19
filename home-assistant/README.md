@@ -14,7 +14,7 @@ A 24/7 Holochain seed node that provides neighborhood coordination services. The
 
 1. Navigate to **Settings** → **Add-ons** → **Add-on Store**
 2. Click the **⋮** menu (top right) → **Repositories**
-3. Add this repository URL: `https://github.com/yourusername/ourblock`
+3. Add this repository URL: `https://github.com/Pixel-Pilot28/OurBlock`
 4. Find **OurBlock Hub** in the add-on list
 5. Click **Install**
 6. Configure your neighborhood name (optional)
@@ -25,11 +25,11 @@ A 24/7 Holochain seed node that provides neighborhood coordination services. The
 ```bash
 # SSH into your Home Assistant machine
 cd /addons
-git clone https://github.com/yourusername/ourblock
-cd ourblock/home-assistant
+git clone https://github.com/Pixel-Pilot28/OurBlock
+cd OurBlock/ourblock-hub
 
 # Install from local
-ha addons install --repository /addons/ourblock --addon ourblock-hub
+ha addons install --repository /addons/OurBlock --addon ourblock-hub
 ```
 
 ## Configuration
