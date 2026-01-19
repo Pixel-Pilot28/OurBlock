@@ -11,8 +11,7 @@ RUN apk add --no-cache \
     dbus \
     nginx \
     openssl \
-  tini \
-  git
+    git
 
 # Set working directory
 WORKDIR /app
@@ -38,8 +37,5 @@ EXPOSE 4443 8888
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
   CMD docker compose ps 2>/dev/null | grep -q "Up" || exit 1
 
-# Use tini for proper signal handling
-ENTRYPOINT ["/sbin/tini", "--"]
-
-# Run the startup script
+# Run the startup script (s6-overlay will handle this)
 CMD ["/app/run.sh"]
