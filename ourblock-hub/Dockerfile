@@ -6,9 +6,21 @@ RUN npm install -g pnpm && pnpm install --frozen-lockfile
 COPY ui/ ./
 RUN pnpm build
 
-# Stage 2: Get Holochain Binaries
-# Using official public Holochain image
-FROM holochain/holochain:0.3.2 AS hc-bin
+# Stage 2: Build Holochain Binaries
+# Building from source as official images for 0.3.2 are unavailable
+FROM rust:1.77-slim-bookworm AS hc-builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    protobuf-compiler \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN cargo install holochain --version 0.3.2
+RUN cargo install lair_keystore --version 0.4.5
+RUN cargo install holochain_cli --version 0.3.2 --bin hc
 
 # Stage 3: Runtime
 FROM ghcr.io/home-assistant/amd64-base-debian:bookworm
@@ -24,9 +36,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Binaries
-COPY --from=hc-bin /usr/bin/holochain /usr/bin/holochain
-COPY --from=hc-bin /usr/bin/hc /usr/bin/hc
-COPY --from=hc-bin /usr/bin/lair-keystore /usr/bin/lair-keystore
+COPY --from=hc-builder /usr/local/cargo/bin/holochain /usr/bin/holochain
+COPY --from=hc-builder /usr/local/cargo/bin/hc /usr/bin/hc
+COPY --from=hc-builder /usr/local/cargo/bin/lair-keystore /usr/bin/lair-keystore
 
 # Prepare Directories
 COPY rootfs/ /
