@@ -11,15 +11,18 @@ RUN apk add --no-cache \
     dbus \
     nginx \
     openssl \
-    tini
+  tini \
+  git
 
 # Set working directory
 WORKDIR /app
 
-# Copy docker-compose and supporting files
-COPY deploy/docker-compose.yaml /app/docker-compose.yaml
-COPY deploy/.env.example /app/.env.example
-COPY infra/ /app/infra/
+# Fetch repo assets needed for compose + infra
+RUN git clone --depth 1 https://github.com/Pixel-Pilot28/OurBlock /tmp/ourblock \
+  && cp /tmp/ourblock/deploy/docker-compose.yaml /app/docker-compose.yaml \
+  && cp /tmp/ourblock/deploy/.env.example /app/.env.example \
+  && cp -r /tmp/ourblock/infra /app/infra \
+  && rm -rf /tmp/ourblock
 
 # Copy Home Assistant integration scripts
 COPY ourblock-hub/run.sh /app/run.sh
