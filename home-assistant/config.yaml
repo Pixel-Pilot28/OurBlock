@@ -51,12 +51,8 @@ schema:
   enable_vouching: bool
   log_level: list(trace|debug|info|warn|error)
 
-# Image built from our Dockerfile
-image: "ghcr.io/{arch}-ourblock-hub"
-
-# Services this add-on provides (for HA service discovery)
-services:
-  - ourblock:tcp  # Custom service type for mDNS
+# Image built from our Dockerfile (local build when omitted)
+# image: "ghcr.io/{arch}-ourblock-hub"
 
 # Ingress configuration (optional - allows embedding in HA UI)
 ingress: true
