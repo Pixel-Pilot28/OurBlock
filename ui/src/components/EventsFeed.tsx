@@ -2,7 +2,25 @@ import { useState, useEffect } from 'react';
 import { useHolochain } from '../contexts/HolochainContext';
 import { CreateEventForm } from './CreateEventForm';
 import { EventCard } from './EventCard';
+import { EventOutput, CreateEventInput } from '../types/events';
+import { useProfiles } from '../hooks/useProfile';
+import { AppSignal } from '@holochain/client';
+import { logger } from '../utils/logger';
 import './EventsFeed.css';
+
+// Helper to convert Uint8Array to hex string (browser-compatible)
+function uint8ArrayToHex(arr: Uint8Array): string {
+  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Helper to convert hex string to Uint8Array
+function hexToUint8Array(hex: string): Uint8Array {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+  }
+  return bytes;
+}
 
 export interface Event {
   id: string;
@@ -14,67 +32,89 @@ export interface Event {
   host: string;
   attendees: string[];
   createdAt: number;
+  hostKey?: Uint8Array; // For profile lookup
+  attendeeKeys?: Uint8Array[]; // For profile lookup
 }
 
 export function EventsFeed() {
-  const { client, isConnected } = useHolochain();
+  const { client, isConnected, onSignal } = useHolochain();
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Collect all agent keys for profile fetching
+  const allAgentKeys = events.flatMap(e => [
+    ...(e.hostKey ? [e.hostKey] : []),
+    ...(e.attendeeKeys || [])
+  ]);
+  const profiles = useProfiles(allAgentKeys);
 
   useEffect(() => {
     loadEvents();
   }, [client, isConnected]);
 
+  // Listen for real-time signals
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const unsubscribe = onSignal((signal: AppSignal) => {
+      if (signal.zome_name === 'events') {
+        const payload = signal.payload;
+        
+        if (payload && typeof payload === 'object' && 'type' in payload) {
+          const signalType = (payload as { type: string }).type;
+          
+          if (signalType === 'NewEvent' || signalType === 'EventRSVP') {
+            logger.debug('Event update signal received, refreshing');
+            loadEvents();
+          }
+        }
+      }
+    });
+
+    return unsubscribe;
+  }, [isConnected, onSignal]);
+
   async function loadEvents() {
-    if (!client || !isConnected) return;
+    if (!client || !isConnected) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      // TODO: Replace with actual Holochain call when implemented
-      // const result = await client.callZome({
-      //   role_name: 'our_block',
-      //   zome_name: 'events',
-      //   fn_name: 'get_all_events',
-      //   payload: null,
-      // });
-      
-      // Mock data for now
-      const mockEvents: Event[] = [
-        {
-          id: '1',
-          title: 'Block Party BBQ',
-          description: 'Join us for a neighborhood BBQ! Bring your favorite dish to share. We\'ll have grills, games, and great company.',
-          date: '2026-01-15',
-          time: '14:00',
-          location: 'Community Park Pavilion',
-          host: 'Sarah Johnson',
-          attendees: ['Sarah Johnson', 'Mike Chen', 'Emily Rodriguez'],
-          createdAt: Date.now() - 86400000,
-        },
-        {
-          id: '2',
-          title: 'Community Garden Workday',
-          description: 'Help us prepare the community garden for spring planting. Tools and refreshments provided.',
-          date: '2026-01-20',
-          time: '09:00',
-          location: 'Maple Street Garden',
-          host: 'Tom Williams',
-          attendees: ['Tom Williams', 'Lisa Park'],
-          createdAt: Date.now() - 172800000,
-        },
-        {
-          id: '3',
-          title: 'Yoga in the Park',
-          description: 'Free outdoor yoga session for all skill levels. Bring your own mat!',
-          date: '2026-01-18',
-          time: '08:00',
-          location: 'Riverside Park',
-          host: 'Jennifer Lee',
-          attendees: ['Jennifer Lee', 'Alex Martinez', 'Priya Patel', 'David Kim'],
-          createdAt: Date.now() - 259200000,
-        },
-      ];
-      
-      setEvents(mockEvents);
+      const result: EventOutput[] = await client.callZome({
+        role_name: 'our_block',
+        zome_name: 'events',
+        fn_name: 'get_all_events',
+        payload: null,
+      });
+
+      // Convert backend events to frontend format
+      const convertedEvents: Event[] = result.map(eventOutput => {
+        const eventDate = new Date(eventOutput.event.event_date * 1000);
+        const hostHex = uint8ArrayToHex(eventOutput.event.host);
+        const hostProfile = profiles.get(hostHex);
+        const hostDisplay = hostProfile?.nickname || `Neighbor #${hostHex.slice(0, 8).toUpperCase()}`;
+        
+        return {
+          id: uint8ArrayToHex(eventOutput.action_hash),
+          title: eventOutput.event.title,
+          description: eventOutput.event.description,
+          date: eventDate.toISOString().split('T')[0],
+          time: eventDate.toTimeString().slice(0, 5),
+          location: eventOutput.event.location,
+          host: hostDisplay,
+          attendees: eventOutput.event.attendees.map(a => {
+            const attendeeHex = uint8ArrayToHex(a);
+            const attendeeProfile = profiles.get(attendeeHex);
+            return attendeeProfile?.nickname || `Neighbor #${attendeeHex.slice(0, 8).toUpperCase()}`;
+          }),
+          createdAt: eventOutput.event.created_at * 1000,
+          hostKey: eventOutput.event.host,
+          attendeeKeys: eventOutput.event.attendees,
+        };
+      });
+
+      setEvents(convertedEvents);
     } catch (error) {
       console.error('Failed to load events:', error);
     } finally {
@@ -86,21 +126,46 @@ export function EventsFeed() {
     if (!client || !isConnected) return;
 
     try {
-      // TODO: Replace with actual Holochain call
-      // const result = await client.callZome({
-      //   role_name: 'our_block',
-      //   zome_name: 'events',
-      //   fn_name: 'create_event',
-      //   payload: eventData,
-      // });
+      // Convert date and time to timestamp
+      const eventDateTime = new Date(`${eventData.date}T${eventData.time}`);
+      const eventDateTimestamp = Math.floor(eventDateTime.getTime() / 1000);
 
-      // Mock implementation
+      const input: CreateEventInput = {
+        title: eventData.title,
+        description: eventData.description,
+        location: eventData.location,
+        event_date: eventDateTimestamp,
+        max_attendees: null, // Can be enhanced later
+      };
+
+      const result: EventOutput = await client.callZome({
+        role_name: 'our_block',
+        zome_name: 'events',
+        fn_name: 'create_event',
+        payload: input,
+      });
+
+      const hostHex = uint8ArrayToHex(result.event.host);
+      const hostProfile = profiles.get(hostHex);
+      const hostDisplay = hostProfile?.nickname || `Neighbor #${hostHex.slice(0, 8).toUpperCase()}`;
+      const newEventDate = new Date(result.event.event_date * 1000);
+      
       const newEvent: Event = {
-        ...eventData,
-        id: Date.now().toString(),
-        host: 'Current User', // TODO: Get from profile
-        attendees: ['Current User'],
-        createdAt: Date.now(),
+        id: uint8ArrayToHex(result.action_hash),
+        title: result.event.title,
+        description: result.event.description,
+        date: newEventDate.toISOString().split('T')[0],
+        time: newEventDate.toTimeString().slice(0, 5),
+        location: result.event.location,
+        host: hostDisplay,
+        attendees: result.event.attendees.map(a => {
+          const attendeeHex = uint8ArrayToHex(a);
+          const attendeeProfile = profiles.get(attendeeHex);
+          return attendeeProfile?.nickname || `Neighbor #${attendeeHex.slice(0, 8).toUpperCase()}`;
+        }),
+        createdAt: result.event.created_at * 1000,
+        hostKey: result.event.host,
+        attendeeKeys: result.event.attendees,
       };
 
       setEvents([newEvent, ...events]);
@@ -110,8 +175,46 @@ export function EventsFeed() {
   }
 
   async function handleRSVP(eventId: string) {
-    // TODO: Implement RSVP functionality
-    console.log('RSVP to event:', eventId);
+    if (!client || !isConnected) return;
+
+    try {
+      // Convert hex id back to ActionHash
+      const eventHash = hexToUint8Array(eventId);
+
+      const result: EventOutput = await client.callZome({
+        role_name: 'our_block',
+        zome_name: 'events',
+        fn_name: 'rsvp_event',
+        payload: eventHash,
+      });
+
+      const updatedEventDate = new Date(result.event.event_date * 1000);
+      const hostHex = uint8ArrayToHex(result.event.host);
+      const hostProfile = profiles.get(hostHex);
+      const hostDisplay = hostProfile?.nickname || `Neighbor #${hostHex.slice(0, 8).toUpperCase()}`;
+      
+      const updatedEvent: Event = {
+        id: eventId,
+        title: result.event.title,
+        description: result.event.description,
+        date: updatedEventDate.toISOString().split('T')[0],
+        time: updatedEventDate.toTimeString().slice(0, 5),
+        location: result.event.location,
+        host: hostDisplay,
+        attendees: result.event.attendees.map(a => {
+          const attendeeHex = uint8ArrayToHex(a);
+          const attendeeProfile = profiles.get(attendeeHex);
+          return attendeeProfile?.nickname || `Neighbor #${attendeeHex.slice(0, 8).toUpperCase()}`;
+        }),
+        createdAt: result.event.created_at * 1000,
+        hostKey: result.event.host,
+        attendeeKeys: result.event.attendees,
+      };
+
+      setEvents(events.map(e => e.id === eventId ? updatedEvent : e));
+    } catch (error) {
+      console.error('Failed to RSVP to event:', error);
+    }
   }
 
   if (isLoading) {

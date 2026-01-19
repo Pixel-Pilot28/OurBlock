@@ -25,6 +25,8 @@ pub struct CreateItemInput {
     pub title: String,
     pub description: String,
     pub image_hash: Option<EntryHash>,
+    pub consumables: Vec<Consumable>,
+    pub notes: String,
 }
 
 /// Output for item operations
@@ -84,6 +86,8 @@ pub fn create_item(input: CreateItemInput) -> ExternResult<ItemOutput> {
         title: input.title,
         description: input.description,
         image_hash: input.image_hash,
+        consumables: input.consumables,
+        notes: input.notes,
         owner: owner.clone(),
         status: ItemStatus::Available,
         created_at: sys_time()?,

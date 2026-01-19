@@ -43,8 +43,12 @@ export function ItemGallery() {
     }
   }, [isConnected, fetchItems]);
 
-  const handleItemAdded = (newItem: ItemOutput) => {
-    setItems((prev) => [normalizeItemOutput(newItem), ...prev]);
+  const handleItemAdded = (newItem?: ItemOutput) => {
+    if (newItem) {
+      setItems((prev) => [normalizeItemOutput(newItem), ...prev]);
+    } else {
+      fetchItems();
+    }
     setShowAddForm(false);
   };
 
@@ -139,7 +143,7 @@ export function ItemGallery() {
             <ItemCard 
               key={`${arrayToHex(item.action_hash)}-${index}`}
               item={item}
-              onBorrowRequest={handleBorrowRequest}
+              onClick={() => handleBorrowRequest(item)}
             />
           ))}
         </div>

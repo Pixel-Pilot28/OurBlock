@@ -10,6 +10,8 @@ export function ProfileForm({ onProfileCreated }: Props) {
   const { client } = useHolochain();
   const [nickname, setNickname] = useState('');
   const [bio, setBio] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [locationMetadata, setLocationMetadata] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,6 +39,8 @@ export function ProfileForm({ onProfileCreated }: Props) {
         payload: {
           nickname: nickname.trim(),
           bio: bio.trim() || null,
+          avatar_url: avatarUrl.trim() || null,
+          location_metadata: locationMetadata.trim() || null,
         },
       });
 
@@ -85,6 +89,32 @@ export function ProfileForm({ onProfileCreated }: Props) {
             rows={4}
           />
           <span className="char-count">{bio.length}/500</span>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="avatarUrl">Avatar URL (optional)</label>
+          <input
+            type="url"
+            id="avatarUrl"
+            value={avatarUrl}
+            onChange={(e) => setAvatarUrl(e.target.value)}
+            placeholder="https://example.com/avatar.jpg"
+            maxLength={500}
+          />
+          <span className="field-hint">Link to your profile picture</span>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="locationMetadata">Location (optional)</label>
+          <input
+            type="text"
+            id="locationMetadata"
+            value={locationMetadata}
+            onChange={(e) => setLocationMetadata(e.target.value)}
+            placeholder="e.g., Building A, Apt 301"
+            maxLength={200}
+          />
+          <span className="field-hint">Your address or unit within the neighborhood</span>
         </div>
 
         {error && <div className="form-error">{error}</div>}

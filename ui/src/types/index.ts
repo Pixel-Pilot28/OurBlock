@@ -15,6 +15,9 @@ export type {
   Post,
   PostInput,
   PostOutput,
+  Reaction,
+  ReactionInput,
+  ReactionOutput,
   Comment,
   CommentInput,
   CommentOutput,
@@ -25,6 +28,7 @@ export type {
   ItemInput,
   ItemOutput,
   ItemStatus,
+  Consumable,
   BorrowRequest,
   BorrowRequestInput,
   BorrowRequestOutput,
@@ -48,7 +52,35 @@ export type {
   Channel,
   ChannelInput,
   ChannelOutput,
+  ChatMessage,
+  ChatSignal,
+  SendMessageInput,
+  SendMessageOutput,
+  StoredMessage,
+  ChatConversation,
 } from './chat';
+
+export type {
+  Event,
+  CreateEventInput,
+  EventOutput,
+} from './events';
+
+export type {
+  Space,
+  CreateSpaceInput,
+  SpaceOutput,
+  Reservation,
+  CreateReservationInput,
+  ReservationOutput,
+} from './spaces';
+
+export type {
+  FileMetadata,
+  FileMetadataOutput,
+  UploadFileInput,
+  FileOutput,
+} from './file-storage';
 
 // Export chat helper functions and constants
 export {

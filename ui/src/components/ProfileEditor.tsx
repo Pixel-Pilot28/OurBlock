@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { useHolochain } from '../contexts/HolochainContext';
 import './ProfileEditor.css';
 
-interface Profile {
+export interface Profile {
   nickname: string;
   bio: string | null;
+  avatar_url: string | null;
+  location_metadata: string | null;
 }
 
 interface Props {
@@ -17,6 +19,8 @@ export function ProfileEditor({ profile, onClose, onSave }: Props) {
   const { client } = useHolochain();
   const [nickname, setNickname] = useState(profile.nickname);
   const [bio, setBio] = useState(profile.bio || '');
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url || '');
+  const [locationMetadata, setLocationMetadata] = useState(profile.location_metadata || '');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
@@ -24,8 +28,10 @@ export function ProfileEditor({ profile, onClose, onSave }: Props) {
   useEffect(() => {
     const nicknameChanged = nickname !== profile.nickname;
     const bioChanged = bio !== (profile.bio || '');
-    setHasChanges(nicknameChanged || bioChanged);
-  }, [nickname, bio, profile]);
+    const avatarUrlChanged = avatarUrl !== (profile.avatar_url || '');
+    const locationChanged = locationMetadata !== (profile.location_metadata || '');
+    setHasChanges(nicknameChanged || bioChanged || avatarUrlChanged || locationChanged);
+  }, [nickname, bio, avatarUrl, locationMetadata, profile]);
 
   const handleSave = async () => {
     if (!client) return;
@@ -46,12 +52,16 @@ export function ProfileEditor({ profile, onClose, onSave }: Props) {
         payload: {
           nickname: nickname.trim(),
           bio: bio.trim() || null,
+          avatar_url: avatarUrl.trim() || null,
+          location_metadata: locationMetadata.trim() || null,
         },
       });
 
       const updatedProfile: Profile = {
         nickname: nickname.trim(),
         bio: bio.trim() || null,
+        avatar_url: avatarUrl.trim() || null,
+        location_metadata: locationMetadata.trim() || null,
       };
 
       onSave(updatedProfile);
@@ -108,6 +118,32 @@ export function ProfileEditor({ profile, onClose, onSave }: Props) {
               placeholder="Tell your neighbors a bit about yourself..."
             />
             <span className="char-count">{bio.length}/500</span>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="edit-avatar-url">Avatar URL</label>
+            <input
+              id="edit-avatar-url"
+              type="url"
+              value={avatarUrl}
+              onChange={(e) => setAvatarUrl(e.target.value)}
+              maxLength={500}
+              placeholder="https://example.com/avatar.jpg"
+            />
+            <span className="field-hint">Link to your profile picture</span>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="edit-location">Location</label>
+            <input
+              id="edit-location"
+              type="text"
+              value={locationMetadata}
+              onChange={(e) => setLocationMetadata(e.target.value)}
+              maxLength={200}
+              placeholder="e.g., Building A, Apt 301"
+            />
+            <span className="field-hint">Your address or unit within the neighborhood</span>
           </div>
 
           {error && (

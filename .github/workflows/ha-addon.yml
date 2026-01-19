@@ -1,0 +1,48 @@
+name: Build and Publish Home Assistant Add-on
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'home-assistant/**'
+      - 'infra/sidecar/**'
+      - 'infra/nginx/**'
+      - '.github/workflows/ha-addon.yml'
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build add-on
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get information
+        id: info
+        uses: home-assistant/actions/helpers/info@master
+        with:
+          path: "./home-assistant"
+
+      - name: Build add-on
+        uses: home-assistant/builder@master
+        with:
+          args: |
+            --all \
+            --target /home-assistant \
+            --docker-hub ghcr.io/${{ github.repository_owner }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push to registry
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/aarch64-ourblock-hub:latest
+          docker push ghcr.io/${{ github.repository_owner }}/amd64-ourblock-hub:latest
+          docker push ghcr.io/${{ github.repository_owner }}/armv7-ourblock-hub:latest

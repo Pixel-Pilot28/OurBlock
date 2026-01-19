@@ -113,6 +113,13 @@
   margin-top: 0.25rem;
 }
 
+.profile-editor .field-hint {
+  font-size: 0.8125rem;
+  color: var(--text-muted, #6c757d);
+  font-style: italic;
+  margin-top: 0.25rem;
+}
+
 .profile-editor .editor-error {
   background: var(--color-danger-light, #ffebee);
   color: var(--color-danger, #dc3545);

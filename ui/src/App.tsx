@@ -1,50 +1,48 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { HolochainProvider } from './contexts/HolochainContext';
-import { ProfileForm } from './components/ProfileForm';
-import { ProfileDisplay } from './components/ProfileDisplay';
+import { queryClient, persistOptions } from './utils/queryClient';
 import { PostFeed } from './components/PostFeed';
-import { ItemGallery } from './components/ItemGallery';
-import { MyGarage } from './components/MyGarage';
+import { ItemsPage } from './components/ItemsPage';
 import { ChatWindow } from './components/ChatWindow';
 import { EventsFeed } from './components/EventsFeed';
 import { SharedSpaces } from './components/SharedSpaces';
 import { CommunitySwitcher, MOCK_COMMUNITIES, type Community } from './components/CommunitySwitcher';
+import { SettingsLayout } from './layouts/SettingsLayout';
+import { ProfilePage } from './pages/ProfilePage';
+import { SystemPage } from './pages/SystemPage';
+import JoinNeighborhood from './pages/JoinNeighborhood';
+import { AdminPage } from './pages/AdminPage';
+import ConnectionStatus from './components/ConnectionStatus';
+import { SyncStatusIndicator } from './components/SyncStatusIndicator';
+import { FirstJoinerWelcome } from './components/FirstJoinerWelcome';
 import { useHolochain } from './contexts/HolochainContext';
 import './App.css';
 
-type View = 'profile' | 'feed' | 'toolshed' | 'garage' | 'events' | 'spaces' | 'chat';
+type View = 'feed' | 'items' | 'events' | 'spaces' | 'chat';
 
 function AppContent() {
-  const { client, isConnected, error } = useHolochain();
-  const [hasProfile, setHasProfile] = useState(false);
-  const [_isCheckingProfile, setIsCheckingProfile] = useState(true);
+  const { isConnected, error } = useHolochain();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [currentView, setCurrentView] = useState<View>('feed');
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
   const [currentCommunity, setCurrentCommunity] = useState<Community>(MOCK_COMMUNITIES[0]);
+  const [hubAgentPubKey, setHubAgentPubKey] = useState<Uint8Array | undefined>();
+  const [showFirstJoiner, setShowFirstJoiner] = useState(true);
 
-  // Check if user already has a profile
+  // Receive hubAgentPubKey from navigation state (from JoinNeighborhood)
   useEffect(() => {
-    async function checkProfile() {
-      if (!client || !isConnected) return;
-
-      try {
-        const profile = await client.callZome({
-          role_name: 'our_block',
-          zome_name: 'profile',
-          fn_name: 'get_my_profile',
-          payload: null,
-        });
-        setHasProfile(profile !== null);
-      } catch (err) {
-        console.error('Failed to check profile:', err);
-        setHasProfile(false);
-      } finally {
-        setIsCheckingProfile(false);
-      }
+    if (location.state?.hubAgentPubKey) {
+      setHubAgentPubKey(location.state.hubAgentPubKey);
     }
+  }, [location]);
 
-    checkProfile();
-  }, [client, isConnected]);
+  const handleViewChange = (view: View) => {
+    setCurrentView(view);
+    navigate('/');
+  };
 
   if (error) {
     return (
@@ -80,6 +78,15 @@ function AppContent() {
 
   return (
     <div className="app">
+      <SyncStatusIndicator />
+      
+      {hubAgentPubKey && showFirstJoiner && (
+        <FirstJoinerWelcome 
+          hubAgentPubKey={hubAgentPubKey}
+          onDismiss={() => setShowFirstJoiner(false)}
+        />
+      )}
+      
       <CommunitySwitcher 
         isOpen={isSwitcherOpen}
         onClose={() => setIsSwitcherOpen(false)}
@@ -102,71 +109,73 @@ function AppContent() {
             <span className="chevron">›</span>
           </button>
           <h1>🏘️ OurBlock</h1>
+          <ConnectionStatus className="ml-auto" />
         </div>
         <p className="tagline">Your {currentCommunity.name} Community</p>
         <nav className="app-nav">
           <button 
             className={`nav-btn ${currentView === 'feed' ? 'active' : ''}`}
-            onClick={() => setCurrentView('feed')}
+            onClick={() => handleViewChange('feed')}
           >
             📰 Feed
           </button>
           <button 
-            className={`nav-btn ${currentView === 'toolshed' ? 'active' : ''}`}
-            onClick={() => setCurrentView('toolshed')}
+            className={`nav-btn ${currentView === 'items' ? 'active' : ''}`}
+            onClick={() => handleViewChange('items')}
           >
             🔧 Tool Shed
           </button>
           <button 
-            className={`nav-btn ${currentView === 'garage' ? 'active' : ''}`}
-            onClick={() => setCurrentView('garage')}
-          >
-            🏠 My Garage
-          </button>
-          <button 
             className={`nav-btn ${currentView === 'events' ? 'active' : ''}`}
-            onClick={() => setCurrentView('events')}
+            onClick={() => handleViewChange('events')}
           >
             📅 Events
           </button>
           <button 
             className={`nav-btn ${currentView === 'spaces' ? 'active' : ''}`}
-            onClick={() => setCurrentView('spaces')}
+            onClick={() => handleViewChange('spaces')}
           >
             🏛️ Spaces
           </button>
           <button 
             className={`nav-btn ${currentView === 'chat' ? 'active' : ''}`}
-            onClick={() => setCurrentView('chat')}
+            onClick={() => handleViewChange('chat')}
           >
             💬 Chat
           </button>
           <button 
-            className={`nav-btn ${currentView === 'profile' ? 'active' : ''}`}
-            onClick={() => setCurrentView('profile')}
+            className="nav-btn"
+            onClick={() => navigate('/settings/profile')}
           >
-            👤 Profile
+            ⚙️ Settings
+          </button>
+          <button 
+            className="nav-btn"
+            onClick={() => navigate('/admin')}
+          >
+            🔑 Admin
           </button>
         </nav>
       </header>
       <main className="app-main">
-        {currentView === 'feed' ? (
-          <PostFeed />
-        ) : currentView === 'toolshed' ? (
-          <ItemGallery />
-        ) : currentView === 'garage' ? (
-          <MyGarage />
-        ) : currentView === 'events' ? (
-          <EventsFeed />
-        ) : currentView === 'spaces' ? (
-          <SharedSpaces />
-        ) : currentView === 'chat' ? (
-          <ChatWindow />
-        ) : !hasProfile ? (
-          <ProfileForm onProfileCreated={() => setHasProfile(true)} />
-        ) : (
-          <ProfileDisplay />
-        )}
+        <Routes>
+          <Route path="/" element={
+            <>
+              {currentView === 'feed' && <PostFeed />}
+              {currentView === 'items' && <ItemsPage />}
+              {currentView === 'events' && <EventsFeed />}
+              {currentView === 'spaces' && <SharedSpaces />}
+              {currentView === 'chat' && <ChatWindow />}
+            </>
+          } />
+          <Route path="/join" element={<JoinNeighborhood />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/settings" element={<SettingsLayout />}>
+            <Route index element={<Navigate to="/settings/profile" replace />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="system" element={<SystemPage />} />
+          </Route>
+        </Routes>
       </main>
       <footer className="app-footer">
         <p>Powered by Holochain</p>
@@ -177,8 +186,15 @@ function AppContent() {
 
 export function App() {
   return (
-    <HolochainProvider>
-      <AppContent />
-    </HolochainProvider>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={persistOptions}
+    >
+      <HolochainProvider>
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </HolochainProvider>
+    </PersistQueryClientProvider>
   );
 }

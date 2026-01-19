@@ -1,0 +1,65 @@
+# Home Assistant Add-on Configuration for OurBlock Hub
+name: OurBlock Hub
+version: "0.1.0"
+slug: ourblock-hub
+description: 24/7 Neighborhood Coordination Hub - A Holochain seed node that bridges web & mobile users
+url: https://github.com/yourusername/ourblock
+arch:
+  - aarch64  # Raspberry Pi 4/5
+  - amd64    # x86_64 (Proxmox, NUC, etc.)
+  - armv7    # Raspberry Pi 3
+
+init: false
+startup: application
+boot: auto
+
+# Ports exposed to Home Assistant network
+ports:
+  443/tcp: 4443  # HTTPS for React UI (served by nginx)
+  8888/tcp: 8888  # Holochain Conductor WebSocket (for mobile apps)
+
+# Port descriptions shown in HA UI
+ports_description:
+  443/tcp: Web UI (HTTPS) - Access OurBlock at https://ourblock.local
+  8888/tcp: Holochain Conductor - WebSocket endpoint for mobile apps
+
+# Host network access for mDNS discovery
+host_network: false
+# Use mDNS service instead
+discovery:
+  - ourblock
+
+# Persistent storage for Holochain data
+map:
+  - config:rw  # /config for HA-managed settings
+  - share:rw   # /share for backups
+
+# Allow access to Docker socket (for self-updates via sidecar)
+privileged:
+  - NET_ADMIN  # For mDNS broadcasting
+
+# Environment variables (user-configurable in HA UI)
+options:
+  neighborhood_name: "My Neighborhood"
+  admin_password: ""  # Auto-generated if empty
+  enable_vouching: true
+  log_level: "info"
+
+schema:
+  neighborhood_name: str
+  admin_password: password?
+  enable_vouching: bool
+  log_level: list(trace|debug|info|warn|error)
+
+# Image built from our Dockerfile
+image: "ghcr.io/{arch}-ourblock-hub"
+
+# Services this add-on provides (for HA service discovery)
+services:
+  - ourblock:tcp  # Custom service type for mDNS
+
+# Ingress configuration (optional - allows embedding in HA UI)
+ingress: true
+ingress_port: 443
+ingress_entry: /
+panel_icon: mdi:home-group

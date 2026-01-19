@@ -1,0 +1,106 @@
+.vouching-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  border-radius: 12px;
+  font-size: 13px;
+  color: #2c3e50;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.vouching-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+}
+
+.vouching-badge__icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.vouching-badge__text {
+  white-space: nowrap;
+}
+
+.vouching-badge__text strong {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* Size variants */
+.vouching-badge--small {
+  padding: 2px 8px;
+  font-size: 11px;
+  gap: 4px;
+}
+
+.vouching-badge--small .vouching-badge__icon {
+  font-size: 14px;
+}
+
+.vouching-badge--medium {
+  padding: 4px 12px;
+  font-size: 13px;
+  gap: 6px;
+}
+
+.vouching-badge--medium .vouching-badge__icon {
+  font-size: 16px;
+}
+
+.vouching-badge--large {
+  padding: 6px 16px;
+  font-size: 15px;
+  gap: 8px;
+}
+
+.vouching-badge--large .vouching-badge__icon {
+  font-size: 20px;
+}
+
+/* Pulse animation for new users */
+@keyframes vouchPulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 2px 16px rgba(255, 215, 0, 0.6);
+  }
+}
+
+.vouching-badge--new {
+  animation: vouchPulse 2s ease-in-out infinite;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .vouching-badge {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: #1a1a1a;
+  }
+
+  .vouching-badge__text strong {
+    color: #000;
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .vouching-badge {
+    padding: 3px 10px;
+    font-size: 12px;
+  }
+
+  .vouching-badge__icon {
+    font-size: 14px;
+  }
+
+  .vouching-badge--large {
+    padding: 5px 14px;
+    font-size: 14px;
+  }
+}

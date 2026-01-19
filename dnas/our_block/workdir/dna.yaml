@@ -3,7 +3,16 @@ manifest_version: 0
 name: our_block
 integrity:
   network_seed: ~
-  properties: ~
+  properties:
+    # Neighborhood configuration
+    private_neighborhood: true
+    require_vouching: true
+    # Hub public key (base64-encoded AgentPubKey)
+    # This should be set when the Hub generates the DNA
+    hub_public_key: ""
+    # Neighborhood metadata
+    neighborhood_uid: ""
+    neighborhood_name: ""
   zomes:
     - name: profile_integrity
       path: ../../../target/wasm32-unknown-unknown/release/profile_integrity.wasm
@@ -17,6 +26,12 @@ integrity:
       path: ../../../target/wasm32-unknown-unknown/release/helpinghands_integrity.wasm
     - name: chat_integrity
       path: ../../../target/wasm32-unknown-unknown/release/chat_integrity.wasm
+    - name: events_integrity
+      path: ../../../target/wasm32-unknown-unknown/release/events_integrity.wasm
+    - name: spaces_integrity
+      path: ../../../target/wasm32-unknown-unknown/release/spaces_integrity.wasm
+    - name: file_storage_integrity
+      path: ../../../target/wasm32-unknown-unknown/release/file_storage_integrity.wasm
 coordinator:
   zomes:
     - name: profile
@@ -43,3 +58,15 @@ coordinator:
       path: ../../../target/wasm32-unknown-unknown/release/chat.wasm
       dependencies:
         - name: chat_integrity
+    - name: events
+      path: ../../../target/wasm32-unknown-unknown/release/events.wasm
+      dependencies:
+        - name: events_integrity
+    - name: spaces
+      path: ../../../target/wasm32-unknown-unknown/release/spaces.wasm
+      dependencies:
+        - name: spaces_integrity
+    - name: file_storage
+      path: ../../../target/wasm32-unknown-unknown/release/file_storage.wasm
+      dependencies:
+        - name: file_storage_integrity

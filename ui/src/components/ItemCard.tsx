@@ -1,29 +1,56 @@
 import { useState, useEffect } from 'react';
 import { useHolochain } from '../contexts/HolochainContext';
-import type { ItemOutput, ItemStatus, Profile } from '../types';
+import type { ItemOutput, Profile, FileOutput, ItemStatus } from '../types';
 import { normalizeItemStatus } from '../utils/itemStatus';
 import './ItemCard.css';
 
 interface Props {
   item: ItemOutput;
-  onBorrowRequest?: (item: ItemOutput) => void;
+  onClick?: () => void;
   showOwnerActions?: boolean;
   onStatusChange?: (item: ItemOutput, newStatus: ItemStatus) => void;
+  style?: React.CSSProperties;
 }
 
 export function ItemCard({ 
-  item, 
-  onBorrowRequest,
-  showOwnerActions = false,
-  onStatusChange 
+  item,
+  onClick,
+  style
 }: Props) {
   const { client, agentKey } = useHolochain();
-  const { title, description, status, owner, created_at } = item.item;
-  const [isRequesting, setIsRequesting] = useState(false);
+  const { title, description, status, owner, image_hash } = item.item;
   const [ownerProfile, setOwnerProfile] = useState<Profile | null>(null);
+  const [imageData, setImageData] = useState<string | null>(null);
 
   // Check if current user is the owner
   const isOwner = agentKey && arrayToHex(owner) === arrayToHex(agentKey);
+
+  // Fetch the item's image from file storage
+  useEffect(() => {
+    async function fetchImage() {
+      if (!client || !image_hash) return;
+
+      try {
+        // Note: file_storage zome is currently disabled
+        // Items created without images will have null image_hash
+        const fileOutput: FileOutput = await client.callZome({
+          role_name: 'our_block',
+          zome_name: 'file_storage',
+          fn_name: 'get_file',
+          payload: image_hash,
+        });
+
+        // Convert Uint8Array to base64
+        const base64 = arrayBufferToBase64(new Uint8Array(fileOutput.data));
+        setImageData(base64);
+      } catch (err) {
+        // Silently fail - file_storage zome may not be available
+        console.debug('Could not fetch image (file_storage may be disabled):', err);
+      }
+    }
+
+    fetchImage();
+  }, [client, image_hash]);
 
   // Fetch the owner's profile
   useEffect(() => {
@@ -54,17 +81,6 @@ export function ItemCard({
   const normalizedStatus = normalizeItemStatus(status);
   const isAvailable = normalizedStatus === 'Available';
 
-  const handleBorrowClick = async () => {
-    if (!onBorrowRequest || !isAvailable) return;
-    
-    setIsRequesting(true);
-    try {
-      onBorrowRequest(item);
-    } finally {
-      setIsRequesting(false);
-    }
-  };
-
   const getStatusBadge = () => {
     switch (normalizedStatus) {
       case 'Available':
@@ -78,69 +94,45 @@ export function ItemCard({
     }
   };
 
-  const getItemIcon = () => {
-    // Simple icon based on first letter or keywords
-    const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes('drill') || lowerTitle.includes('tool')) return '🔧';
-    if (lowerTitle.includes('ladder')) return '🪜';
-    if (lowerTitle.includes('game') || lowerTitle.includes('board')) return '🎲';
-    if (lowerTitle.includes('book')) return '📚';
-    if (lowerTitle.includes('bike') || lowerTitle.includes('bicycle')) return '🚲';
-    if (lowerTitle.includes('tent') || lowerTitle.includes('camp')) return '⛺';
-    if (lowerTitle.includes('grill') || lowerTitle.includes('bbq')) return '🍖';
-    if (lowerTitle.includes('chair') || lowerTitle.includes('table')) return '🪑';
-    if (lowerTitle.includes('camera')) return '📷';
-    if (lowerTitle.includes('speaker') || lowerTitle.includes('music')) return '🔊';
-    return '📦';
-  };
-
   return (
-    <article className={`item-card ${!isAvailable ? 'unavailable' : ''}`}>
-      <div className="item-image">
-        <span className="item-icon">{getItemIcon()}</span>
-        {getStatusBadge()}
-      </div>
-
-      <div className="item-content">
-        <h3 className="item-title">{title}</h3>
-        <p className="item-description">{description || 'No description provided.'}</p>
-        
-        <div className="item-meta">
-          <span className="item-owner">
-            👤 {ownerDisplayName}
-          </span>
-          <span className="item-date">
-            Listed {formatTimestamp(created_at)}
-          </span>
+    <article 
+      className={`item-card ${!isAvailable ? 'unavailable' : ''}`}
+      onClick={onClick}
+      style={style}
+    >
+      {imageData && (
+        <div className="item-image-container">
+          <img src={imageData} alt={title} className="item-image" />
+          <div className="item-image-overlay">
+            {getStatusBadge()}
+          </div>
         </div>
-      </div>
-
-      <div className="item-actions">
-        {showOwnerActions ? (
-          <div className="owner-actions">
-            <button 
-              className="status-btn"
-              onClick={() => onStatusChange?.(item, isAvailable ? 'Unavailable' : 'Available')}
-            >
-              {isAvailable ? '🔒 Mark Unavailable' : '🔓 Mark Available'}
-            </button>
-          </div>
-        ) : isOwner ? (
-          <div className="owner-badge">
-            <span>📦 Your Item</span>
-          </div>
-        ) : (
-          <button 
-            className={`borrow-btn ${!isAvailable ? 'disabled' : ''}`}
-            onClick={handleBorrowClick}
-            disabled={!isAvailable || isRequesting}
-          >
-            {isRequesting ? 'Requesting...' : isAvailable ? '🤝 Request to Borrow' : 'Not Available'}
-          </button>
-        )}
+      )}
+      
+      <div className="item-compact-content">
+        <div className="item-header-row">
+          <h3 className="item-title">{title}</h3>
+          {!imageData && getStatusBadge()}
+        </div>
+        
+        <p className="item-description">{description || 'No description'}</p>
+        
+        <div className="item-footer-row">
+          <span className="item-owner">{ownerDisplayName}</span>
+          {isOwner && <span className="owner-indicator">Your item</span>}
+        </div>
       </div>
     </article>
   );
+}
+
+function arrayBufferToBase64(buffer: Uint8Array): string {
+  let binary = '';
+  const len = buffer.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(buffer[i]);
+  }
+  return `data:image/jpeg;base64,${btoa(binary)}`;
 }
 
 function arrayToHex(arr: Uint8Array): string {
@@ -154,22 +146,4 @@ function shortenAgentKey(key: Uint8Array): string {
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
   return `Neighbor #${hex.toUpperCase()}`;
-}
-
-function formatTimestamp(timestamp: number): string {
-  const date = new Date(timestamp / 1000);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-
-  if (diff < 86400000) {
-    return 'today';
-  }
-  if (diff < 604800000) {
-    const days = Math.floor(diff / 86400000);
-    return `${days}d ago`;
-  }
-  return date.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-  });
 }

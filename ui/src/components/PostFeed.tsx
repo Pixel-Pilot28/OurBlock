@@ -1,71 +1,78 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useHolochain } from '../contexts/HolochainContext';
 import { CreatePostForm } from './CreatePostForm';
 import { PostCard } from './PostCard';
+import { queryKeys } from '../utils/queryClient';
 import type { PostOutput } from '../types';
+import { AppSignal } from '@holochain/client';
+import { logger } from '../utils/logger';
 import './PostFeed.css';
 
-// Polling interval in milliseconds (30 seconds)
-const POLL_INTERVAL = 30000;
-
 export function PostFeed() {
-  const { client, isConnected } = useHolochain();
-  const [posts, setPosts] = useState<PostOutput[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const { client, isConnected, onSignal } = useHolochain();
+  const queryClient = useQueryClient();
+  const [error] = useState<string | null>(null);
 
-  // Fetch all posts from the DHT
-  const fetchPosts = useCallback(async () => {
-    if (!client) return;
-
-    try {
+  // Use React Query for posts - reads from IndexedDB cache first
+  const {
+    data: posts = [],
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: queryKeys.posts.all,
+    queryFn: async () => {
+      if (!client) throw new Error('Client not connected');
+      
       const result = await client.callZome({
         role_name: 'our_block',
         zome_name: 'feed',
         fn_name: 'get_all_posts',
         payload: null,
       });
+      
+      return result as PostOutput[];
+    },
+    enabled: isConnected && !!client,
+    // Keep cached data for 5 minutes
+    staleTime: 1000 * 60 * 5,
+  });
 
-      setPosts(result);
-      setLastUpdated(new Date());
-      setError(null);
-    } catch (err) {
-      console.error('Failed to fetch posts:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch posts');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [client]);
-
-  // Initial fetch on mount
-  useEffect(() => {
-    if (isConnected) {
-      fetchPosts();
-    }
-  }, [isConnected, fetchPosts]);
-
-  // Set up polling for real-time updates
+  // Listen for real-time signals to invalidate cache
   useEffect(() => {
     if (!isConnected) return;
 
-    const intervalId = setInterval(() => {
-      fetchPosts();
-    }, POLL_INTERVAL);
+    const unsubscribe = onSignal((signal: AppSignal) => {
+      // Check if this is a feed signal
+      if (signal.zome_name === 'feed') {
+        const payload = signal.payload;
+        
+        if (payload && typeof payload === 'object' && 'type' in payload) {
+          const signalType = (payload as { type: string }).type;
+          
+          if (signalType === 'NewPost' || signalType === 'NewReaction' || signalType === 'NewComment') {
+            logger.debug('Feed signal received, invalidating cache', { signalType });
+            // Invalidate the query cache to trigger a background refetch
+            queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
+          }
+        }
+      }
+    });
 
-    return () => clearInterval(intervalId);
-  }, [isConnected, fetchPosts]);
+    return unsubscribe;
+  }, [isConnected, onSignal, queryClient]);
 
-  // Handle new post creation
+  // Handle new post creation with optimistic updates
   const handlePostCreated = (newPost: PostOutput) => {
-    // Add the new post to the top of the feed
-    setPosts((prevPosts) => [newPost, ...prevPosts]);
+    // Optimistically add to cache
+    queryClient.setQueryData(queryKeys.posts.all, (old: PostOutput[] = []) => [newPost, ...old]);
+    // Trigger background refetch to sync with DHT
+    queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
   };
 
   // Manual refresh
   const handleRefresh = () => {
-    setIsLoading(true);
-    fetchPosts();
+    refetch();
   };
 
   if (!isConnected) {
@@ -94,9 +101,9 @@ export function PostFeed() {
           >
             🔄
           </button>
-          {lastUpdated && (
-            <span className="last-updated">
-              Updated {formatTimeAgo(lastUpdated)}
+          {isLoading && (
+            <span className="loading-indicator">
+              Syncing...
             </span>
           )}
         </div>
@@ -135,21 +142,11 @@ export function PostFeed() {
 
       <div className="feed-footer">
         <p className="polling-indicator">
-          ✨ Auto-refreshing every 30 seconds
+          {isLoading ? '🔄 Syncing with DHT...' : '✨ Cached data, syncing in background'}
         </p>
       </div>
     </div>
   );
-}
-
-// Helper to format time ago
-function formatTimeAgo(date: Date): string {
-  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
-
-  if (seconds < 60) return 'just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  return `${Math.floor(seconds / 86400)}d ago`;
 }
 
 // Helper to convert Uint8Array to hex string for keys

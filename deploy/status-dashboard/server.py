@@ -9,7 +9,7 @@ import json
 import time
 import threading
 from datetime import datetime
-from flask import Flask, render_template, jsonify, send_from_directory
+from flask import Flask, render_template, jsonify, send_from_directory  # type: ignore[import-not-found]
 import requests
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
@@ -21,7 +21,7 @@ DATA_DIR = os.environ.get('DATA_DIR', '/data')
 
 # Try to import Docker - may not be available in all environments
 try:
-    import docker
+    import docker  # type: ignore[import-not-found]
     DOCKER_AVAILABLE = True
 except ImportError:
     DOCKER_AVAILABLE = False

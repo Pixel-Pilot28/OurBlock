@@ -5,11 +5,19 @@
 // Item Status
 export type ItemStatus = 'Available' | 'Borrowed' | 'Unavailable';
 
+// Consumable
+export interface Consumable {
+  name: string;
+  included: boolean;
+}
+
 // Item
 export interface Item {
   title: string;
   description: string;
   image_hash: Uint8Array | null; // EntryHash
+  consumables: Consumable[];
+  notes: string;
   owner: Uint8Array; // AgentPubKey
   status: ItemStatus;
   created_at: number; // Timestamp
@@ -19,6 +27,8 @@ export interface CreateItemInput {
   title: string;
   description: string;
   image_hash: Uint8Array | null;
+  consumables: Consumable[];
+  notes: string;
 }
 
 export interface ItemOutput {

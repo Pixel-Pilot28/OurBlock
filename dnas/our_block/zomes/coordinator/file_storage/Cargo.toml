@@ -1,0 +1,13 @@
+[package]
+name = "file_storage"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hdk = { workspace = true }
+serde = { workspace = true }
+sha2 = { workspace = true }
+file_storage_integrity = { path = "../../integrity/file_storage" }
+
+[lib]
+crate-type = ["cdylib", "rlib"]

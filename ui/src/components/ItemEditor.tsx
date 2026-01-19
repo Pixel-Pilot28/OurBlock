@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useHolochain } from '../contexts/HolochainContext';
 import { AvailabilityCalendar } from './AvailabilityCalendar';
-import type { ItemOutput, ItemStatus } from '../types';
+import type { ItemOutput } from '../types';
 import { normalizeItemStatus } from '../utils/itemStatus';
 import './ItemEditor.css';
 

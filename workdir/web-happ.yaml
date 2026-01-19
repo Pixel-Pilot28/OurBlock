@@ -1,0 +1,7 @@
+---
+manifest_version: 1
+name: our_block
+ui:
+  bundled: ../ui/dist
+happ_manifest:
+  path: ./happ.yaml

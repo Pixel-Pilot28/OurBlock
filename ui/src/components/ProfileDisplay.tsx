@@ -1,12 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useHolochain } from '../contexts/HolochainContext';
-import { ProfileEditor } from './ProfileEditor';
+import { ProfileEditor, type Profile } from './ProfileEditor';
+import { VouchingBadge } from './VouchingBadge';
 import './ProfileDisplay.css';
-
-interface Profile {
-  nickname: string;
-  bio: string | null;
-}
 
 interface ProfileOutput {
   profile: Profile;
@@ -99,6 +95,7 @@ export function ProfileDisplay() {
             </div>
             <div className="profile-info">
               <h3>{profile.profile.nickname}</h3>
+              <VouchingBadge size="medium" />
               {profile.profile.bio && <p>{profile.profile.bio}</p>}
             </div>
             <div className="edit-indicator">✏️</div>

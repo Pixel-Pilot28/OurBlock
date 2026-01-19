@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useHolochain } from '../contexts/HolochainContext';
 import type { PostOutput } from '../types';
 import { MIN_TITLE_LENGTH, MAX_TITLE_LENGTH, MAX_CONTENT_LENGTH } from '../types/feed';
+import { postTitleSchema, postContentSchema, validateField } from '../utils/validation';
+import { logger } from '../utils/logger';
+import { useRateLimit } from '../hooks/useRateLimit';
 import './CreatePostForm.css';
 
 interface Props {
@@ -16,9 +19,12 @@ export function CreatePostForm({ onPostCreated }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Rate limit: 10 posts per minute
+  const rateLimit = useRateLimit(10, 60000);
+
   const isValidTitle = title.trim().length >= MIN_TITLE_LENGTH && title.length <= MAX_TITLE_LENGTH;
   const isValidContent = content.trim().length > 0 && content.length <= MAX_CONTENT_LENGTH;
-  const canSubmit = isValidTitle && isValidContent && !isSubmitting;
+  const canSubmit = isValidTitle && isValidContent && !isSubmitting && rateLimit.canCall();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,14 +34,38 @@ export function CreatePostForm({ onPostCreated }: Props) {
     setIsSubmitting(true);
     setError(null);
 
+    // Check rate limit
+    if (!rateLimit.attemptCall()) {
+      const waitTime = Math.ceil(rateLimit.nextAvailableIn() / 1000);
+      setError(`Rate limit exceeded. Please wait ${waitTime} seconds before posting again.`);
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
+      // Validate title
+      const titleValidation = validateField(postTitleSchema, title);
+      if (!titleValidation.success) {
+        setError(titleValidation.error);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Validate content
+      const contentValidation = validateField(postContentSchema, content);
+      if (!contentValidation.success) {
+        setError(contentValidation.error);
+        setIsSubmitting(false);
+        return;
+      }
+
       const result = await client.callZome({
         role_name: 'our_block',
         zome_name: 'feed',
         fn_name: 'create_post',
         payload: {
-          title: title.trim(),
-          content: content.trim(),
+          title: titleValidation.data,
+          content: contentValidation.data,
         },
       });
 
@@ -47,7 +77,7 @@ export function CreatePostForm({ onPostCreated }: Props) {
       // Notify parent
       onPostCreated(result);
     } catch (err) {
-      console.error('Failed to create post:', err);
+      logger.error('Failed to create post', err);
       setError(err instanceof Error ? err.message : 'Failed to create post');
     } finally {
       setIsSubmitting(false);

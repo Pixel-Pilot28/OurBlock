@@ -1,4 +1,6 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite';
+import type { PreRenderedChunk } from 'rollup';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
@@ -17,7 +19,7 @@ export default defineConfig({
     include: ['@holochain/client'],
   },
   server: {
-    port: 8888,
+    port: 8891,
     // Holochain websocket connection
     proxy: {
       '/holochain': {
@@ -34,5 +36,36 @@ export default defineConfig({
     commonjsOptions: {
       include: [/libsodium/, /node_modules/],
     },
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        serviceWorker: resolve(__dirname, 'src/serviceWorker.ts'),
+      },
+      output: {
+        entryFileNames: (chunkInfo: PreRenderedChunk) => {
+          return chunkInfo.name === 'serviceWorker' 
+            ? 'serviceWorker.js' 
+            : 'assets/[name]-[hash].js';
+        },
+      },
+    },
   },
-});
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+    css: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'src/test/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        '**/mockData',
+        '**/__tests__',
+      ],
+    },
+  },
+} as any);

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { SignalType } from '@holochain/client';
 import { useHolochain } from '../contexts/HolochainContext';
 import type { ChatSignal, StoredMessage, ChatConversation, SendMessageInput } from '../types';
 import { agentKeyToHex, shortenAgentKey, MAX_MESSAGE_LENGTH } from '../types';
@@ -68,8 +69,14 @@ export function ChatWindow({ recipientKey, onSelectConversation }: Props) {
   useEffect(() => {
     if (!client) return;
 
-    const unsubscribe = client.on('signal', (signal: { payload: ChatSignal }) => {
-      const chatSignal = signal.payload;
+    const unsubscribe = client.on('signal', (signal) => {
+      // Extract AppSignal from wrapper (signal may be wrapped by Holochain client)
+      const appSignal = 'value' in signal && signal.type === SignalType.App ? signal.value : signal as unknown as any;
+      
+      // Check if this is a chat signal
+      if (appSignal.zome_name !== 'chat') return;
+      
+      const chatSignal = appSignal.payload as ChatSignal;
 
       if (chatSignal.type === 'Message') {
         const senderHex = agentKeyToHex(chatSignal.sender);
@@ -93,7 +100,7 @@ export function ChatWindow({ recipientKey, onSelectConversation }: Props) {
           };
 
           // Deduplicate by message ID
-          if (existing.messages.some(m => m.id === newMessage.id)) {
+          if (existing.messages.some((m: StoredMessage) => m.id === newMessage.id)) {
             return prev;
           }
 
@@ -124,7 +131,7 @@ export function ChatWindow({ recipientKey, onSelectConversation }: Props) {
             ...prev,
             [senderHex]: {
               ...existing,
-              messages: existing.messages.map(m =>
+              messages: existing.messages.map((m: StoredMessage) =>
                 m.id === chatSignal.message_id ? { ...m, read: true } : m
               ),
             },
@@ -310,7 +317,7 @@ export function ChatWindow({ recipientKey, onSelectConversation }: Props) {
                 </div>
               ) : (
                 <div className="messages-list">
-                  {activeMessages.map((msg) => (
+                  {activeMessages.map((msg: StoredMessage) => (
                     <div
                       key={msg.id}
                       className={`message ${msg.isOutgoing ? 'outgoing' : 'incoming'}`}

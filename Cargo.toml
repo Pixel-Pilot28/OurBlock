@@ -7,12 +7,18 @@ members = [
     "dnas/our_block/zomes/integrity/toolshed",
     "dnas/our_block/zomes/integrity/helpinghands_integrity",
     "dnas/our_block/zomes/integrity/chat_integrity",
+    "dnas/our_block/zomes/integrity/events",
+    "dnas/our_block/zomes/integrity/spaces",
+    "dnas/our_block/zomes/integrity/file_storage",
     "dnas/our_block/zomes/coordinator/profile",
     "dnas/our_block/zomes/coordinator/vouch",
     "dnas/our_block/zomes/coordinator/feed",
     "dnas/our_block/zomes/coordinator/toolshed",
     "dnas/our_block/zomes/coordinator/helpinghands",
     "dnas/our_block/zomes/coordinator/chat",
+    "dnas/our_block/zomes/coordinator/events",
+    "dnas/our_block/zomes/coordinator/spaces",
+    "dnas/our_block/zomes/coordinator/file_storage",
 ]
 
 [workspace.dependencies]
@@ -21,6 +27,7 @@ hdi = "=0.7.0"
 hdk = "=0.6.0"
 serde = "1.0"
 holochain_serialized_bytes = "*"
+sha2 = "0.10"
 
 [profile.dev]
 opt-level = "z"

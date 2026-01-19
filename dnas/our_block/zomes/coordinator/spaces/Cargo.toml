@@ -1,0 +1,13 @@
+[package]
+name = "spaces"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "spaces"
+
+[dependencies]
+hdk = { workspace = true }
+spaces_integrity = { path = "../../integrity/spaces" }
+serde = { workspace = true, features = ["derive"] }

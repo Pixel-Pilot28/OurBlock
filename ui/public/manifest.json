@@ -1,0 +1,49 @@
+{
+  "name": "OurBlock - Neighborhood Network",
+  "short_name": "OurBlock",
+  "description": "A decentralized, privacy-focused neighborhood network built on Holochain",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4a90e2",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["social", "lifestyle"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Posts",
+      "short_name": "Posts",
+      "description": "View neighborhood posts",
+      "url": "/posts",
+      "icons": []
+    },
+    {
+      "name": "Events",
+      "short_name": "Events",
+      "description": "View neighborhood events",
+      "url": "/events",
+      "icons": []
+    },
+    {
+      "name": "Profile",
+      "short_name": "Profile",
+      "description": "View your profile",
+      "url": "/profile",
+      "icons": []
+    }
+  ]
+}

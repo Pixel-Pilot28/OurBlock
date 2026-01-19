@@ -12,6 +12,15 @@
 use hdk::prelude::*;
 use feed_integrity::*;
 
+/// Signal types for real-time updates
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "type")]
+pub enum Signal {
+    NewPost { post_hash: ActionHash, post: Post },
+    NewReaction { post_hash: ActionHash, reaction_hash: ActionHash },
+    NewComment { post_hash: ActionHash, comment_hash: ActionHash },
+}
+
 /// Input for creating a post
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CreatePostInput {
@@ -23,6 +32,36 @@ pub struct CreatePostInput {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PostOutput {
     pub post: Post,
+    pub action_hash: ActionHash,
+    pub entry_hash: EntryHash,
+}
+
+/// Input for creating a reaction
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CreateReactionInput {
+    pub post_hash: ActionHash,
+    pub reaction_type: String,
+}
+
+/// Output for reaction operations
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ReactionOutput {
+    pub reaction: Reaction,
+    pub action_hash: ActionHash,
+    pub entry_hash: EntryHash,
+}
+
+/// Input for creating a comment
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CreateCommentInput {
+    pub post_hash: ActionHash,
+    pub content: String,
+}
+
+/// Output for comment operations
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CommentOutput {
+    pub comment: Comment,
     pub action_hash: ActionHash,
     pub entry_hash: EntryHash,
 }
@@ -65,6 +104,12 @@ pub fn create_post(input: CreatePostInput) -> ExternResult<PostOutput> {
         LinkTypes::AgentToPosts,
         (),
     )?;
+    
+    // Emit signal for real-time updates
+    emit_signal(Signal::NewPost {
+        post_hash: action_hash.clone(),
+        post: post.clone(),
+    })?;
     
     // Create link to global all_posts anchor
     let all_posts_anchor = all_posts_anchor_hash()?;
@@ -232,4 +277,158 @@ pub fn get_post(action_hash: ActionHash) -> ExternResult<Option<PostOutput>> {
 fn all_posts_anchor_hash() -> ExternResult<EntryHash> {
     let path = Path::from(ALL_POSTS_PATH);
     path.path_entry_hash()
+}
+
+// ============================================================================
+// REACTIONS
+// ============================================================================
+
+/// Add a reaction to a post
+#[hdk_extern]
+pub fn add_reaction(input: CreateReactionInput) -> ExternResult<ReactionOutput> {
+    let author = agent_info()?.agent_initial_pubkey;
+    
+    let reaction = Reaction {
+        post_hash: input.post_hash.clone(),
+        author: author.clone(),
+        reaction_type: input.reaction_type,
+        created_at: sys_time()?,
+    };
+    
+    let action_hash = create_entry(EntryTypes::Reaction(reaction.clone()))?;
+    let entry_hash = hash_entry(&reaction)?;
+    
+    // Link from post to reaction
+    create_link(
+        input.post_hash.clone(),
+        action_hash.clone(),
+        LinkTypes::PostToReactions,
+        (),
+    )?;
+    
+    // Link from agent to reaction (for finding user's reactions)
+    create_link(
+        author,
+        action_hash.clone(),
+        LinkTypes::AgentToReactions,
+        (),
+    )?;
+        // Emit signal for real-time updates
+    emit_signal(Signal::NewReaction {
+        post_hash: input.post_hash.clone(),
+        reaction_hash: action_hash.clone(),
+    })?;
+        Ok(ReactionOutput {
+        reaction,
+        action_hash,
+        entry_hash,
+    })
+}
+
+/// Remove a reaction (by deleting the entry and links)
+#[hdk_extern]
+pub fn remove_reaction(reaction_hash: ActionHash) -> ExternResult<()> {
+    delete_entry(reaction_hash)?;
+    Ok(())
+}
+
+/// Get all reactions for a post
+#[hdk_extern]
+pub fn get_post_reactions(post_hash: ActionHash) -> ExternResult<Vec<ReactionOutput>> {
+    let links = get_links(
+        LinkQuery::try_new(post_hash, LinkTypes::PostToReactions)?,
+        GetStrategy::Local,
+    )?;
+    
+    let mut reactions = Vec::new();
+    
+    for link in links {
+        if let Some(action_hash) = link.target.into_action_hash() {
+            if let Some(record) = get(action_hash.clone(), GetOptions::default())? {
+                if let Some(reaction) = record.entry().to_app_option::<Reaction>()
+                    .map_err(|e| wasm_error!(WasmErrorInner::Guest(e.to_string())))? 
+                {
+                    let entry_hash = hash_entry(&reaction)?;
+                    reactions.push(ReactionOutput {
+                        reaction,
+                        action_hash,
+                        entry_hash,
+                    });
+                }
+            }
+        }
+    }
+    
+    Ok(reactions)
+}
+
+// ============================================================================
+// COMMENTS
+// ============================================================================
+
+/// Add a comment to a post
+#[hdk_extern]
+pub fn add_comment(input: CreateCommentInput) -> ExternResult<CommentOutput> {
+    let author = agent_info()?.agent_initial_pubkey;
+    
+    let comment = Comment {
+        post_hash: input.post_hash.clone(),
+        author,
+        content: input.content,
+        created_at: sys_time()?,
+    };
+    
+    let action_hash = create_entry(EntryTypes::Comment(comment.clone()))?;
+    let entry_hash = hash_entry(&comment)?;
+    
+    // Link from post to comment
+    create_link(
+        input.post_hash.clone(),
+        action_hash.clone(),
+        LinkTypes::PostToComments,
+        (),
+    )?;
+        // Emit signal for real-time updates
+    emit_signal(Signal::NewComment {
+        post_hash: input.post_hash,
+        comment_hash: action_hash.clone(),
+    })?;
+        Ok(CommentOutput {
+        comment,
+        action_hash,
+        entry_hash,
+    })
+}
+
+/// Get all comments for a post
+#[hdk_extern]
+pub fn get_post_comments(post_hash: ActionHash) -> ExternResult<Vec<CommentOutput>> {
+    let links = get_links(
+        LinkQuery::try_new(post_hash, LinkTypes::PostToComments)?,
+        GetStrategy::Local,
+    )?;
+    
+    let mut comments = Vec::new();
+    
+    for link in links {
+        if let Some(action_hash) = link.target.into_action_hash() {
+            if let Some(record) = get(action_hash.clone(), GetOptions::default())? {
+                if let Some(comment) = record.entry().to_app_option::<Comment>()
+                    .map_err(|e| wasm_error!(WasmErrorInner::Guest(e.to_string())))? 
+                {
+                    let entry_hash = hash_entry(&comment)?;
+                    comments.push(CommentOutput {
+                        comment,
+                        action_hash,
+                        entry_hash,
+                    });
+                }
+            }
+        }
+    }
+    
+    // Sort by created_at ascending (oldest first for comments)
+    comments.sort_by(|a, b| a.comment.created_at.cmp(&b.comment.created_at));
+    
+    Ok(comments)
 }

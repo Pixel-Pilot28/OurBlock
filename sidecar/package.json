@@ -1,0 +1,24 @@
+{
+  "name": "ourblock-sidecar",
+  "version": "0.1.0",
+  "description": "Sidecar management service for OurBlock Docker updates",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "holochain",
+    "docker",
+    "sidecar",
+    "management"
+  ],
+  "author": "OurBlock Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}
