@@ -1,7 +1,11 @@
-#!/bin/bash
+#!/usr/bin/with-contenv bash
 # mDNS Discovery Service - Announces OurBlock Hub on local network
 
 set -e
+
+# Source bashio library
+# shellcheck disable=SC1091
+source /usr/lib/bashio/bashio.sh
 
 bashio::log.info "Starting mDNS broadcast for ourblock.local..."
 

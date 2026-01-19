@@ -1,7 +1,11 @@
-#!/bin/bash
+#!/usr/bin/with-contenv bash
 # OurBlock Hub - Home Assistant Add-on Startup Script
 
 set -e
+
+# Source bashio library
+# shellcheck disable=SC1091
+source /usr/lib/bashio/bashio.sh
 
 bashio::log.info "Starting OurBlock Hub..."
 
