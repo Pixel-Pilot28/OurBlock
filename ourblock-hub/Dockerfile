@@ -31,12 +31,12 @@ COPY discover.sh /app/discover.sh
 # Make scripts executable
 RUN chmod +x /app/run.sh /app/discover.sh
 
-# Expose ports (defined in config.yaml)
-EXPOSE 443 8888
+# Expose ports (when using host network mode, these are informational)
+EXPOSE 4443 8888
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider https://localhost:443/health || exit 1
+# Health check (check if docker compose is running)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+  CMD docker compose ps 2>/dev/null | grep -q "Up" || exit 1
 
 # Use tini for proper signal handling
 ENTRYPOINT ["/sbin/tini", "--"]

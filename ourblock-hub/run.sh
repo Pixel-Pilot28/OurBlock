@@ -27,10 +27,11 @@ ENABLE_VOUCHING=${ENABLE_VOUCHING}
 RUST_LOG=${LOG_LEVEL}
 APP_VERSION=0.1.0
 
-# Network configuration
+# Network configuration (host network mode - direct port access)
 MDNS_HOSTNAME=ourblock.local
 CONDUCTOR_PORT=8888
-UI_PORT=443
+UI_PORT=4443
+HTTPS_PORT=4443
 EOF
 
 bashio::log.info "Configuration created for neighborhood: ${NEIGHBORHOOD_NAME}"
@@ -39,9 +40,15 @@ bashio::log.info "Configuration created for neighborhood: ${NEIGHBORHOOD_NAME}"
 bashio::log.info "Starting mDNS discovery service..."
 /app/discover.sh &
 
+# Configure Docker socket from Home Assistant
+export DOCKER_HOST="unix:///var/run/docker.sock"
+
 # Wait for Docker daemon to be ready
 bashio::log.info "Waiting for Docker daemon..."
-timeout 30 sh -c 'until docker info > /dev/null 2>&1; do sleep 1; done'
+timeout 30 sh -c 'until docker info > /dev/null 2>&1; do sleep 1; done' || {
+  bashio::log.error "Docker daemon not accessible. Check add-on configuration."
+  exit 1
+}
 
 # Build images if needed
 if [ ! -f /app/.images_built ]; then
@@ -65,8 +72,16 @@ sleep 10
 docker compose ps
 
 bashio::log.info "OurBlock Hub is running!"
-bashio::log.info "Access the UI at: https://ourblock.local or https://$(hostname -I | awk '{print $1}'):4443"
+bashio::log.info "Access the UI at: https://ourblock.local:4443 or https://$(hostname -I | awk '{print $1}'):4443"
 bashio::log.info "Mobile apps can connect to: ws://ourblock.local:8888"
+
+if [ -z "$(bashio::config 'admin_password')" ]; then
+  bashio::log.warning "═══════════════════════════════════════════════════════"
+  bashio::log.warning "  AUTO-GENERATED ADMIN PASSWORD"
+  bashio::log.warning "  ${ADMIN_PASSWORD}"
+  bashio::log.warning "  Save this password and update in add-on configuration!"
+  bashio::log.warning "═══════════════════════════════════════════════════════"
+fi
 
 # Keep the script running and forward logs
 docker compose logs -f

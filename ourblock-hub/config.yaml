@@ -24,19 +24,20 @@ ports_description:
   8888/tcp: Holochain Conductor - WebSocket endpoint for mobile apps
 
 # Host network access for mDNS discovery
-host_network: false
-# Use mDNS service instead
-discovery:
-  - ourblock
+host_network: true
 
 # Persistent storage for Holochain data
 map:
   - config:rw  # /config for HA-managed settings
   - share:rw   # /share for backups
 
-# Allow access to Docker socket (for self-updates via sidecar)
+# Docker socket access for running compose stack
+docker_api: true
+
+# Privileged capabilities needed
 privileged:
   - NET_ADMIN  # For mDNS broadcasting
+  - SYS_ADMIN  # For Docker operations
 
 # Environment variables (user-configurable in HA UI)
 options:
