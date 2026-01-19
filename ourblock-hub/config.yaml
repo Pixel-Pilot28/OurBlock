@@ -1,6 +1,6 @@
 # Home Assistant Add-on Configuration for OurBlock Hub
 name: OurBlock Hub
-version: "0.1.5"
+version: "0.1.6"
 slug: ourblock-hub
 description: 24/7 Neighborhood Coordination Hub - A Holochain seed node that bridges web & mobile users
 url: https://github.com/Pixel-Pilot28/OurBlock

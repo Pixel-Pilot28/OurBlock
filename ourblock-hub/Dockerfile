@@ -21,11 +21,7 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # Fetch repo assets needed for compose + infra
-RUN git clone --depth 1 https://github.com/Pixel-Pilot28/OurBlock /tmp/ourblock \
-  && cp /tmp/ourblock/deploy/docker-compose.yaml /app/docker-compose.yaml \
-  && cp /tmp/ourblock/deploy/.env.example /app/.env.example \
-  && cp -r /tmp/ourblock/infra /app/infra \
-  && rm -rf /tmp/ourblock
+RUN git clone --depth 1 https://github.com/Pixel-Pilot28/OurBlock /app/ourblock
 
 # Copy Home Assistant integration scripts
 COPY run.sh /app/run.sh
