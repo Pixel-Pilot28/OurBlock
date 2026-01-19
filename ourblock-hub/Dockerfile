@@ -22,8 +22,8 @@ COPY deploy/.env.example /app/.env.example
 COPY infra/ /app/infra/
 
 # Copy Home Assistant integration scripts
-COPY home-assistant/run.sh /app/run.sh
-COPY home-assistant/discover.sh /app/discover.sh
+COPY ourblock-hub/run.sh /app/run.sh
+COPY ourblock-hub/discover.sh /app/discover.sh
 
 # Make scripts executable
 RUN chmod +x /app/run.sh /app/discover.sh
