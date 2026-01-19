@@ -3,23 +3,65 @@
 
 set -e
 
-# Source bashio library
-# shellcheck disable=SC1091
-source /usr/lib/bashio/bashio.sh
+HAS_BASHIO=0
+if [ -f /usr/lib/bashio/bashio.sh ]; then
+  # shellcheck disable=SC1091
+  source /usr/lib/bashio/bashio.sh
+  HAS_BASHIO=1
+fi
 
-bashio::log.info "Starting OurBlock Hub..."
+log_info() {
+  if [ "$HAS_BASHIO" -eq 1 ]; then
+    bashio::log.info "$*"
+  else
+    echo "[info] $*"
+  fi
+}
+
+log_warn() {
+  if [ "$HAS_BASHIO" -eq 1 ]; then
+    bashio::log.warning "$*"
+  else
+    echo "[warn] $*"
+  fi
+}
+
+log_error() {
+  if [ "$HAS_BASHIO" -eq 1 ]; then
+    bashio::log.error "$*"
+  else
+    echo "[error] $*"
+  fi
+}
+
+config_get() {
+  local key="$1"
+  if [ "$HAS_BASHIO" -eq 1 ]; then
+    bashio::config "$key"
+  elif [ -f /data/options.json ]; then
+    jq -r --arg k "$key" '.[$k] // empty' /data/options.json
+  else
+    echo ""
+  fi
+}
+
+log_info "Starting OurBlock Hub..."
 
 # Get configuration from Home Assistant
-NEIGHBORHOOD_NAME=$(bashio::config 'neighborhood_name')
-ADMIN_PASSWORD=$(bashio::config 'admin_password')
-ENABLE_VOUCHING=$(bashio::config 'enable_vouching')
-LOG_LEVEL=$(bashio::config 'log_level')
+NEIGHBORHOOD_NAME=$(config_get 'neighborhood_name')
+ADMIN_PASSWORD=$(config_get 'admin_password')
+ENABLE_VOUCHING=$(config_get 'enable_vouching')
+LOG_LEVEL=$(config_get 'log_level')
+
+NEIGHBORHOOD_NAME=${NEIGHBORHOOD_NAME:-"My Neighborhood"}
+ENABLE_VOUCHING=${ENABLE_VOUCHING:-true}
+LOG_LEVEL=${LOG_LEVEL:-info}
 
 # Generate admin password if not provided
 if [ -z "$ADMIN_PASSWORD" ]; then
-    ADMIN_PASSWORD=$(openssl rand -base64 32)
-    bashio::log.warning "Auto-generated admin password: $ADMIN_PASSWORD"
-    bashio::log.warning "Save this password! You can change it in the add-on configuration."
+  ADMIN_PASSWORD=$(openssl rand -base64 32)
+  log_warn "Auto-generated admin password: $ADMIN_PASSWORD"
+  log_warn "Save this password! You can change it in the add-on configuration."
 fi
 
 # Create .env file from configuration
@@ -38,53 +80,53 @@ UI_PORT=4443
 HTTPS_PORT=4443
 EOF
 
-bashio::log.info "Configuration created for neighborhood: ${NEIGHBORHOOD_NAME}"
+log_info "Configuration created for neighborhood: ${NEIGHBORHOOD_NAME}"
 
 # Start mDNS discovery service
-bashio::log.info "Starting mDNS discovery service..."
+log_info "Starting mDNS discovery service..."
 /app/discover.sh &
 
 # Configure Docker socket from Home Assistant
 export DOCKER_HOST="unix:///var/run/docker.sock"
 
 # Wait for Docker daemon to be ready
-bashio::log.info "Waiting for Docker daemon..."
+log_info "Waiting for Docker daemon..."
 timeout 30 sh -c 'until docker info > /dev/null 2>&1; do sleep 1; done' || {
-  bashio::log.error "Docker daemon not accessible. Check add-on configuration."
+  log_error "Docker daemon not accessible. Check add-on configuration."
   exit 1
 }
 
 # Build images if needed
 if [ ! -f /app/.images_built ]; then
-    bashio::log.info "Building Docker images (first run, this may take 10-15 minutes)..."
+    log_info "Building Docker images (first run, this may take 10-15 minutes)..."
     cd /app
     docker compose build --no-cache
     touch /app/.images_built
-    bashio::log.info "Images built successfully!"
+    log_info "Images built successfully!"
 fi
 
 # Start services
-bashio::log.info "Starting OurBlock Hub services..."
+log_info "Starting OurBlock Hub services..."
 cd /app
 docker compose up -d
 
 # Wait for services to be healthy
-bashio::log.info "Waiting for services to be ready..."
+log_info "Waiting for services to be ready..."
 sleep 10
 
 # Display service status
 docker compose ps
 
-bashio::log.info "OurBlock Hub is running!"
-bashio::log.info "Access the UI at: https://ourblock.local:4443 or https://$(hostname -I | awk '{print $1}'):4443"
-bashio::log.info "Mobile apps can connect to: ws://ourblock.local:8888"
+log_info "OurBlock Hub is running!"
+log_info "Access the UI at: https://ourblock.local:4443 or https://$(hostname -I | awk '{print $1}'):4443"
+log_info "Mobile apps can connect to: ws://ourblock.local:8888"
 
-if [ -z "$(bashio::config 'admin_password')" ]; then
-  bashio::log.warning "═══════════════════════════════════════════════════════"
-  bashio::log.warning "  AUTO-GENERATED ADMIN PASSWORD"
-  bashio::log.warning "  ${ADMIN_PASSWORD}"
-  bashio::log.warning "  Save this password and update in add-on configuration!"
-  bashio::log.warning "═══════════════════════════════════════════════════════"
+if [ -z "$(config_get 'admin_password')" ]; then
+  log_warn "═══════════════════════════════════════════════════════"
+  log_warn "  AUTO-GENERATED ADMIN PASSWORD"
+  log_warn "  ${ADMIN_PASSWORD}"
+  log_warn "  Save this password and update in add-on configuration!"
+  log_warn "═══════════════════════════════════════════════════════"
 fi
 
 # Keep the script running and forward logs

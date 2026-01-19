@@ -9,7 +9,7 @@ arch:
   - amd64    # x86_64 (Proxmox, NUC, etc.)
   - armv7    # Raspberry Pi 3
 
-init: false
+init: true
 startup: application
 boot: auto
 

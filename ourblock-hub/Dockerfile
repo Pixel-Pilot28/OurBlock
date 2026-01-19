@@ -11,7 +11,9 @@ RUN apk add --no-cache \
     dbus \
     nginx \
     openssl \
-    git
+  git \
+  bash \
+  jq
 
 # Set working directory
 WORKDIR /app

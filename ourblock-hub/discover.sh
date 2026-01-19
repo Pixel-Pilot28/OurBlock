@@ -3,11 +3,22 @@
 
 set -e
 
-# Source bashio library
-# shellcheck disable=SC1091
-source /usr/lib/bashio/bashio.sh
+HAS_BASHIO=0
+if [ -f /usr/lib/bashio/bashio.sh ]; then
+  # shellcheck disable=SC1091
+  source /usr/lib/bashio/bashio.sh
+  HAS_BASHIO=1
+fi
 
-bashio::log.info "Starting mDNS broadcast for ourblock.local..."
+log_info() {
+  if [ "$HAS_BASHIO" -eq 1 ]; then
+    bashio::log.info "$*"
+  else
+    echo "[info] $*"
+  fi
+}
+
+log_info "Starting mDNS broadcast for ourblock.local..."
 
 # Start Avahi daemon (mDNS/Bonjour implementation)
 dbus-daemon --system
@@ -37,9 +48,9 @@ EOF
 # Reload Avahi to pick up the new service
 avahi-daemon --reload
 
-bashio::log.info "mDNS service registered! Neighbors can now discover this hub at:"
-bashio::log.info "  - Web UI: https://ourblock.local"
-bashio::log.info "  - Mobile: ws://ourblock.local:8888"
+log_info "mDNS service registered! Neighbors can now discover this hub at:"
+log_info "  - Web UI: https://ourblock.local"
+log_info "  - Mobile: ws://ourblock.local:8888"
 
 # Keep the script running
 tail -f /dev/null
