@@ -89,13 +89,21 @@ fi
 
 # Wait for Docker daemon to be ready
 log_info "Waiting for Docker daemon..."
-timeout 30 sh -c 'until docker info > /dev/null 2>&1; do sleep 1; done' || {
-  log_error "Docker daemon not accessible."
-  log_error "Listing /var/run and /run for diagnostics:"
-  ls -la /var/run || true
-  ls -la /run || true
-  exit 1
-}
+if ! timeout 30 sh -c 'until docker info > /dev/null 2>&1; do sleep 1; done'; then
+  log_warn "Docker daemon not accessible. Attempting to start local dockerd..."
+  mkdir -p /var/run
+  dockerd --host=unix:///var/run/docker.sock > /var/log/dockerd.log 2>&1 &
+  sleep 3
+  if ! timeout 30 sh -c 'until docker info > /dev/null 2>&1; do sleep 1; done'; then
+    log_error "Docker daemon still not accessible."
+    log_error "Listing /var/run and /run for diagnostics:"
+    ls -la /var/run || true
+    ls -la /run || true
+    log_error "Dockerd log (if any):"
+    tail -n 200 /var/log/dockerd.log || true
+    exit 1
+  fi
+fi
 
 # Build images if needed
 if [ ! -f /app/.images_built ]; then

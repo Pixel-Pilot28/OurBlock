@@ -6,6 +6,8 @@ FROM $BUILD_FROM
 RUN apk add --no-cache \
     docker-cli \
     docker-cli-compose \
+  docker \
+  iptables \
     avahi-dev \
     avahi-tools \
     dbus \
