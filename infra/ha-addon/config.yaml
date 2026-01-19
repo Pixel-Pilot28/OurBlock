@@ -1,0 +1,41 @@
+# Home Assistant Add-on Configuration for OurBlock Hub
+name: OurBlock Hub
+version: "0.2.0"
+slug: ourblock-hub
+description: 24/7 Neighborhood Coordination Hub - Holochain-based coordination platform
+url: https://github.com/Pixel-Pilot28/OurBlock
+arch:
+  - aarch64  # Raspberry Pi 4/5
+  - amd64    # x86_64 (Proxmox, NUC, etc.)
+  - armv7    # Raspberry Pi 3
+
+init: false
+startup: application
+boot: auto
+
+# Host network for mDNS discovery
+host_network: true
+
+# Persistent storage
+map:
+  - config:rw  # /config - Holochain data, lair keys
+  - share:rw   # /share - Backups
+
+# Environment variables (user-configurable in HA UI)
+options:
+  neighborhood_name: "My Neighborhood"
+  admin_password: ""  # Auto-generated if empty
+  enable_vouching: true
+  log_level: "info"
+
+schema:
+  neighborhood_name: str
+  admin_password: password?
+  enable_vouching: bool
+  log_level: list(trace|debug|info|warn|error)
+
+# Ingress configuration (optional - allows embedding in HA UI)
+ingress: true
+ingress_port: 4443
+ingress_entry: /
+panel_icon: mdi:home-group

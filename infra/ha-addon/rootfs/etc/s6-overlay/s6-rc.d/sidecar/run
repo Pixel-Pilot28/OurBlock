@@ -1,0 +1,31 @@
+#!/usr/bin/with-contenv bashio
+# Rust Sidecar service runner
+
+# Get config from Home Assistant
+ADMIN_PASSWORD=$(bashio::config 'admin_password')
+NEIGHBORHOOD_NAME=$(bashio::config 'neighborhood_name' 'My Neighborhood')
+ENABLE_VOUCHING=$(bashio::config 'enable_vouching' 'true')
+LOG_LEVEL=$(bashio::config 'log_level' 'info')
+
+# Generate admin password if not provided
+if [ -z "$ADMIN_PASSWORD" ]; then
+    ADMIN_PASSWORD=$(openssl rand -base64 32)
+    bashio::log.warning "═══════════════════════════════════════════════════════"
+    bashio::log.warning "  AUTO-GENERATED ADMIN PASSWORD"
+    bashio::log.warning "  ${ADMIN_PASSWORD}"
+    bashio::log.warning "  Save this password and update in add-on configuration!"
+    bashio::log.warning "═══════════════════════════════════════════════════════"
+fi
+
+# Wait for Holochain to be ready
+sleep 3
+
+# Start sidecar
+bashio::log.info "Starting OurBlock Sidecar..."
+export RUST_LOG="${LOG_LEVEL}"
+export ADMIN_API_KEY="${ADMIN_PASSWORD}"
+export NEIGHBORHOOD_NAME="${NEIGHBORHOOD_NAME}"
+export ENABLE_VOUCHING="${ENABLE_VOUCHING}"
+export CONDUCTOR_URL="ws://localhost:8888"
+
+exec ourblock-sidecar

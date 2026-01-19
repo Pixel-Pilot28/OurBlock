@@ -1,0 +1,41 @@
+#!/usr/bin/with-contenv bashio
+# mDNS Discovery service
+
+NEIGHBORHOOD_NAME=$(bashio::config 'neighborhood_name' 'My Neighborhood')
+
+bashio::log.info "Starting mDNS broadcast for ourblock.local..."
+
+# Start Avahi daemon
+mkdir -p /run/dbus
+dbus-daemon --system --fork
+avahi-daemon --daemonize
+
+# Create service definition
+cat > /etc/avahi/services/ourblock.service <<EOF
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<service-group>
+  <name replace-wildcards="yes">OurBlock Hub - ${NEIGHBORHOOD_NAME}</name>
+  <service>
+    <type>_ourblock._tcp</type>
+    <port>8888</port>
+    <txt-record>version=0.2.0</txt-record>
+    <txt-record>name=${NEIGHBORHOOD_NAME}</txt-record>
+    <txt-record>type=hub</txt-record>
+  </service>
+  <service>
+    <type>_https._tcp</type>
+    <port>4443</port>
+    <txt-record>path=/</txt-record>
+  </service>
+</service-group>
+EOF
+
+avahi-daemon --reload
+
+bashio::log.info "mDNS service registered!"
+bashio::log.info "  - Web UI: https://ourblock.local:4443"
+bashio::log.info "  - Mobile: ws://ourblock.local:8888"
+
+# Keep running
+exec tail -f /dev/null

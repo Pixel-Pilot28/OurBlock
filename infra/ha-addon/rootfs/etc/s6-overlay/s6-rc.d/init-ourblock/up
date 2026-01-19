@@ -1,0 +1,16 @@
+#!/usr/bin/with-contenv bashio
+# One-time initialization script
+
+bashio::log.info "OurBlock Hub initialization..."
+
+# Generate SSL certificates if they don't exist
+if [ ! -f /config/ssl/cert.pem ]; then
+    bashio::log.info "Generating self-signed SSL certificate..."
+    mkdir -p /config/ssl
+    openssl req -x509 -newkey rsa:4096 -nodes \
+        -keyout /config/ssl/key.pem \
+        -out /config/ssl/cert.pem \
+        -days 365 -subj "/CN=ourblock.local"
+fi
+
+bashio::log.info "Initialization complete!"

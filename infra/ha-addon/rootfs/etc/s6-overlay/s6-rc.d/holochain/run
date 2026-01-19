@@ -1,0 +1,54 @@
+#!/usr/bin/with-contenv bashio
+# Holochain Conductor service runner
+
+# Get config from Home Assistant
+NEIGHBORHOOD_NAME=$(bashio::config 'neighborhood_name' 'My Neighborhood')
+LOG_LEVEL=$(bashio::config 'log_level' 'info')
+
+CONFIG_PATH="/config/holochain"
+LAIR_PATH="/config/lair"
+mkdir -p "${CONFIG_PATH}"
+
+# Wait for Lair to be ready
+sleep 2
+
+# Generate conductor config if needed
+if [ ! -f "${CONFIG_PATH}/conductor-config.yaml" ]; then
+    bashio::log.info "Generating Holochain conductor config..."
+    cat > "${CONFIG_PATH}/conductor-config.yaml" <<EOF
+---
+environment_path: ${CONFIG_PATH}
+use_dangerous_test_keystore: false
+keystore:
+  type: lair_server_in_proc
+  lair_root: ${LAIR_PATH}
+  connection_url: unix://${LAIR_PATH}/socket
+
+network:
+  bootstrap_service: https://bootstrap.holo.host
+  transport_pool:
+    - type: webrtc
+    - type: quic
+
+admin_interfaces:
+  - driver:
+      type: websocket
+      port: 8888
+      
+db_sync_strategy: Fast
+EOF
+fi
+
+# Install DNAs if needed
+if [ ! -f "${CONFIG_PATH}/.dnas_installed" ]; then
+    bashio::log.info "Installing OurBlock DNA..."
+    # DNA installation will be handled by sidecar
+    touch "${CONFIG_PATH}/.dnas_installed"
+fi
+
+# Start conductor
+bashio::log.info "Starting Holochain Conductor..."
+export RUST_LOG="${LOG_LEVEL}"
+exec holochain \
+    --config-path "${CONFIG_PATH}/conductor-config.yaml" \
+    --piped

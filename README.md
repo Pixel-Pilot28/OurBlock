@@ -42,27 +42,50 @@ Individual community members can connect as:
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for complete architecture documentation.
 
+## Repository Structure
+
+This is a **monorepo** containing shared code and multiple deployment targets:
+
+```
+OurBlock/
+├── dnas/               # Shared Holochain DNA code (Rust zomes)
+├── ui/                 # Shared React UI (TypeScript/Vite)
+└── infra/              # Infrastructure & deployment
+    ├── docker-general/ # Standard Docker Compose deployment
+    ├── ha-addon/       # Home Assistant Add-on (S6-supervised)
+    ├── sidecar/        # Rust WebSocket/REST sidecar service
+    └── nginx/          # Reverse proxy configurations
+```
+
+Both deployment methods share the same `/dnas` and `/ui` code, ensuring identical functionality with different orchestration strategies.
+
 ## Deployment Options
 
 ### Option 1: Home Assistant Add-on (Recommended)
 
 The easiest way to run an OurBlock Hub on a Raspberry Pi or home server:
 
-1. Install the OurBlock Add-on from Home Assistant
-2. Configure neighborhood name and settings
-3. Share invite codes with neighbors
+1. Add the OurBlock repository to Home Assistant
+2. Install the OurBlock Add-on
+3. Configure neighborhood name and settings
+4. Share invite codes with neighbors
 
-See [docs/HOME_ASSISTANT_DEPLOYMENT.md](docs/HOME_ASSISTANT_DEPLOYMENT.md) for details.
+See [infra/ha-addon/README.md](infra/ha-addon/README.md) for complete installation and architecture details.
 
-### Option 2: Docker Compose
+**Architecture**: Uses S6-overlay to supervise Holochain, Lair, sidecar, and Nginx as processes in a single container.
 
-For manual deployment on any Linux server:
+### Option 2: Docker Compose (Standard)
+
+For manual deployment on any Linux server, Raspberry Pi, Synology NAS, or desktop:
 
 ```bash
+cd infra/docker-general
 docker-compose up -d
 ```
 
-See [deploy/README.md](deploy/README.md) for configuration details.
+See [infra/docker-general/README.md](infra/docker-general/README.md) for configuration details.
+
+**Architecture**: Uses Docker Compose to orchestrate separate containers for each service.
 
 ### Option 3: Holochain Launcher
 

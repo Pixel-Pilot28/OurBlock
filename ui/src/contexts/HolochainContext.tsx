@@ -74,8 +74,7 @@ export function HolochainProvider({ children }: Props) {
 
         const appPort = queryAppPort || import.meta.env.VITE_HC_PORT || '8888';
         const adminPort = queryAdminPort || import.meta.env.VITE_HC_ADMIN_PORT || '37397';
-        // Use window.location.hostname if VITE_HC_HOST is not set, otherwise fallback to localhost
-        const host = import.meta.env.VITE_HC_HOST || window.location.hostname || 'localhost';
+        const host = import.meta.env.VITE_HC_HOST || 'localhost';
         
         logger.debug('Holochain connection initiated', { 
           queryAppPort, 

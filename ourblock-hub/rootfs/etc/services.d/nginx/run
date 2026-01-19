@@ -1,6 +1,0 @@
-#!/usr/bin/with-contenv bashio
-bashio::log.info "Starting Nginx..."
-mkdir -p /var/log/nginx
-touch /var/log/nginx/error.log
-# Ensure we don't daemonize, s6 expects foreground
-exec nginx -g "daemon off;"
